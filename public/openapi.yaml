@@ -7,7 +7,6 @@ servers:
   - url: http://localhost:8080/api
 tags:
   - name: Authorization
-  - name: News
 paths:
   /auth/sign-up:
     post:
@@ -98,69 +97,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Unauthorized'
-        '422':
-          $ref: '#/components/responses/GenericError'
-  /list:
-    get:
-      tags:
-        - News
-      summary: Get all news
-      security:
-        - access_token: [ ]
-        - Authorization: [ ]
-      operationId: NewsList
-      parameters:
-        - $ref: '#/components/parameters/offsetParam'
-        - $ref: '#/components/parameters/limitParam'
-      responses:
-        '200':
-          $ref: '#/components/responses/ManyNews'
-        '400':
-          $ref: '#/components/responses/GenericError'
-        '422':
-          $ref: '#/components/responses/GenericError'
-      x-codegen-request-body-name: body
-  /add:
-    post:
-      tags:
-        - News
-      summary: Add news
-      description: Add new news
-      security:
-        - access_token: [ ]
-        - Authorization: [ ]
-      operationId: GetManyNews
-      requestBody:
-        $ref: '#/components/requestBodies/CreateNewsInput'
-      responses:
-        '201':
-          $ref: '#/components/responses/OneNews'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '400':
-          $ref: '#/components/responses/GenericError'
-        '422':
-          $ref: '#/components/responses/GenericError'
-      x-codegen-request-body-name: body
-  /edit/{id}:
-    put:
-      tags:
-        - News
-      security:
-        - access_token: [ ]
-        - Authorization: [ ]
-      summary: Update news
-      description: Update existing news
-      operationId: UpdateNews
-      requestBody:
-        $ref: '#/components/requestBodies/UpdateNewsInput'
-      responses:
-        '201':
-          $ref: '#/components/responses/OneNews'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '400':
-          $ref: '#/components/responses/GenericError'
         '422':
           $ref: '#/components/responses/GenericError'
 components:

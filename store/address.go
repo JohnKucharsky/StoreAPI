@@ -5,6 +5,7 @@ import (
 	"github.com/JohnKucharsky/StoreAPI/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"time"
 )
 
 type AddressStore struct {
@@ -107,7 +108,8 @@ func (as *AddressStore) Update(m domain.AddressInput, id int) (*domain.Address, 
 			house = @house,
 			floor = @floor,
 			entrance = @entrance,
-			additional_info = @additional_info
+			additional_info = @additional_info,
+			updated_at = @updated_at
              WHERE id = @id 
              returning  id, city, street, house, floor, entrance, additional_info, created_at, updated_at`,
 		pgx.NamedArgs{
@@ -118,6 +120,7 @@ func (as *AddressStore) Update(m domain.AddressInput, id int) (*domain.Address, 
 			"floor":           m.Floor,
 			"entrance":        m.Entrance,
 			"additional_info": m.AdditionalInfo,
+			"updated_at":      time.Now(),
 		},
 	)
 	if err != nil {

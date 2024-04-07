@@ -14,7 +14,7 @@ type ProductStore interface {
 
 type Product struct {
 	ID          int       `json:"id" db:"id"`
-	MainShelfID int       `json:"main_shelf_id" db:"main_shelf_id"`
+	MainShelfID *int      `json:"main_shelf_id" db:"main_shelf_id"`
 	Name        string    `json:"name" db:"name"`
 	Serial      string    `json:"serial" db:"serial"`
 	Price       int       `json:"price" db:"price"`
@@ -25,11 +25,16 @@ type Product struct {
 }
 
 type ProductInput struct {
-	MainShelfID    int     `json:"main_shelf_id" validate:"required"`
+	MainShelfID    *int    `json:"main_shelf_id"`
 	Name           string  `json:"name" validate:"required"`
 	Serial         string  `json:"serial" validate:"required"`
 	Price          int     `json:"price" validate:"required"`
 	Model          *int    `json:"model"`
 	PictureURL     string  `json:"picture_url" validate:"required"`
 	AdditionalInfo *string `json:"additional_info"`
+}
+
+type ProductWithQty struct {
+	Product
+	Quantity int `json:"quantity" db:"quantity"`
 }

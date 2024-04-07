@@ -9,7 +9,8 @@ import (
 
 func New(dbURI string) *pgxpool.Pool {
 	pgi, err := pginit.New(
-		dbURI, pginit.WithDecimalType(),
+		dbURI,
+		pginit.WithDecimalType(),
 		pginit.WithGoogleUUIDType(),
 	)
 

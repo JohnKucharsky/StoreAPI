@@ -1,7 +1,7 @@
 -- +goose Up
 create table product(
         id serial primary key,
-        main_shelf_id int not null references shelf(id) on update cascade on delete restrict,
+        main_shelf_id int references shelf(id) on update cascade on delete set null,
         name varchar not null,
         serial varchar not null unique,
         price bigint not null,

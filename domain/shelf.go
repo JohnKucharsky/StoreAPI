@@ -10,6 +10,7 @@ type ShelfStore interface {
 	GetOne(id int) (*Shelf, error)
 	Update(m ShelfInput, id int) (*Shelf, error)
 	Delete(id int) (*int, error)
+	GetRandomShelfID() (*int, error)
 }
 
 type Shelf struct {
