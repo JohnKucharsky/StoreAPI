@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"github.com/google/uuid"
 	"time"
 )
 
@@ -16,9 +15,7 @@ type OrderStore interface {
 
 type Order struct {
 	ID        int              `json:"id"`
-	User      User             `json:"user"`
 	Address   Address          `json:"address"`
-	Total     string           `json:"total"`
 	Payment   string           `json:"payment"`
 	Products  []ProductWithQty `json:"products"`
 	CreatedAt time.Time        `json:"created_at"`
@@ -27,9 +24,7 @@ type Order struct {
 
 type OrderShort struct {
 	ID        int       `db:"id" json:"id"`
-	UserID    uuid.UUID `db:"user_id" json:"user_id"`
 	AddressID int       `db:"address_id" json:"address_id"`
-	Total     string    `db:"total" json:"total"`
 	Payment   string    `db:"payment" json:"payment"`
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
@@ -46,24 +41,17 @@ type ProductIdQty struct {
 }
 
 type OrderInput struct {
-	UserID    uuid.UUID      `json:"user_id" validate:"required"`
 	AddressID int            `json:"address_id" validate:"required"`
-	Total     string         `json:"total" validate:"required"`
 	Payment   string         `json:"payment" validate:"required"`
 	Products  []ProductIdQty `json:"products" validate:"required,dive"`
 }
 
-func OrderDbToOrder(orderDB *OrderShort, user *User, address *Address, products []*ProductWithQty) Order {
+func OrderDbToOrder(orderDB *OrderShort, address *Address, products []*ProductWithQty) Order {
 	var prs []ProductWithQty
 	for _, product := range products {
 		if product != nil {
 			prs = append(prs, *product)
 		}
-	}
-
-	var usr User
-	if user != nil {
-		usr = *user
 	}
 
 	var addr Address
@@ -73,9 +61,7 @@ func OrderDbToOrder(orderDB *OrderShort, user *User, address *Address, products 
 
 	return Order{
 		ID:        orderDB.ID,
-		User:      usr,
 		Address:   addr,
-		Total:     orderDB.Total,
 		Payment:   orderDB.Payment,
 		Products:  prs,
 		CreatedAt: orderDB.CreatedAt,

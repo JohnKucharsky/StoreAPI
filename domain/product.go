@@ -18,7 +18,7 @@ type Product struct {
 	Name        string    `json:"name" db:"name"`
 	Serial      string    `json:"serial" db:"serial"`
 	Price       int       `json:"price" db:"price"`
-	Model       *int      `json:"model" db:"model"`
+	Model       *string   `json:"model" db:"model"`
 	PictureURL  string    `json:"picture_url" db:"picture_url"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`

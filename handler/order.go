@@ -41,11 +41,6 @@ func (h *Handler) GetOneOrder(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(utils.ErrorRes(err.Error()))
 	}
 
-	user, err := h.userStore.GetOne("", orderDB.UserID.String())
-	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(utils.ErrorRes(err.Error()))
-	}
-
 	address, err := h.addressStore.GetOne(orderDB.AddressID)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(utils.ErrorRes(err.Error()))
@@ -56,7 +51,7 @@ func (h *Handler) GetOneOrder(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(utils.ErrorRes(err.Error()))
 	}
 
-	response := domain.OrderDbToOrder(orderDB, user, address, products)
+	response := domain.OrderDbToOrder(orderDB, address, products)
 
 	return c.Status(http.StatusOK).JSON(utils.SuccessRes(response))
 }

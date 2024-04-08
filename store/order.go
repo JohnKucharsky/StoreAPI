@@ -30,13 +30,11 @@ func (store *OrderStore) Create(m domain.OrderInput) (
 
 	rows, err := store.db.Query(
 		ctx, `
-        INSERT INTO orders (user_id, address_id, total, payment)
-        VALUES (@user_id, @address_id, @total, @payment)
-        RETURNING id, user_id, address_id, total, payment, created_at, updated_at`,
+        INSERT INTO orders (address_id, payment)
+        VALUES (@address_id, @payment)
+        RETURNING id, address_id, payment, created_at, updated_at`,
 		pgx.NamedArgs{
-			"user_id":    m.UserID,
 			"address_id": m.AddressID,
-			"total":      m.Total,
 			"payment":    m.Payment,
 		},
 	)
@@ -118,17 +116,13 @@ func (store *OrderStore) Update(m domain.OrderInput, id int) (*domain.OrderShort
 	rows, err := store.db.Query(
 		ctx,
 		`UPDATE orders SET 
-			user_id = @user_id,
 			address_id = @address_id,
-			total = @total,
 			payment = @payment
              WHERE id = @id 
-             returning  id, user_id,address_id,total,payment, created_at, updated_at`,
+             returning  id,address_id,payment, created_at, updated_at`,
 		pgx.NamedArgs{
 			"id":         id,
-			"user_id":    m.UserID,
 			"address_id": m.AddressID,
-			"total":      m.Total,
 			"payment":    m.Payment,
 		},
 	)

@@ -157,32 +157,48 @@ func (store *OperationsStore) GetAssemblyInfoByOrders(m []int) (
 		return nil, errors.New("you have to provide array of orders to get info")
 	}
 
-	var idsStr []string
-	for _, id := range m {
-		s := strconv.Itoa(id)
-		idsStr = append(idsStr, s)
-	}
-
-	rows, err := store.db.Query(
-		ctx, `select orders.id as order_id, product.id as product_id,product.name as product_name, 
-	 count(product.id) as quantity, shelf.name as shelf_name from orders 
-	 left join order_product on orders.id = order_product.order_id 
-	 left join product on order_product.product_id = product.id
-	 left join shelf_product on product.id = shelf_product.product_id
-	 left join shelf on shelf_product.shelf_id = shelf.id
-	 where orders.id in(@ids) group by shelf.name,orders.id,product.id;`, pgx.NamedArgs{"ids": strings.Join(idsStr, "::int, ")},
-	)
-	fmt.Println(strings.Join(idsStr, "::int, "))
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := pgx.CollectRows(
-		rows, pgx.RowToAddrOfStructByName[domain.AssemblyInfo],
+	// get orders in ids
+	ordersRows, err := store.db.Query(
+		ctx, `select product_id,order_id from order_product where order_id = any ($1);`,
+		m,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return res, nil
+	orderProduct, err := pgx.CollectRows(
+		ordersRows, pgx.RowToStructByName[domain.OrderProductDB],
+	)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(orderProduct)
+	var idsToGetProducts []int
+	for _, orderProductDB := range orderProduct {
+		idsToGetProducts = append(idsToGetProducts, orderProductDB.ProductID)
+	}
+
+	if len(idsToGetProducts) == 0 {
+		return nil, errors.New("you have to buy some products")
+	}
+	// get orders in ids
+
+	// get products in ids
+	productsRows, err := store.db.Query(
+		ctx, `select * from product where id = any ($1);`,
+		idsToGetProducts,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	productRes, err := pgx.CollectRows(
+		productsRows, pgx.RowToStructByName[domain.Product],
+	)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(productRes)
+
+	return nil, nil
 }

@@ -26,9 +26,9 @@ func (as *ShelfStore) Create(m domain.ShelfInput) (
 
 	rows, err := as.db.Query(
 		ctx, `
-        INSERT INTO shelf (name, destination)
-        VALUES (@name, @destination)
-        RETURNING id, name, destination, created_at, updated_at`,
+        INSERT INTO shelf (name)
+        VALUES (@name)
+        RETURNING id, name, created_at, updated_at`,
 		pgx.NamedArgs{
 			"name":        m.Name,
 			"destination": m.Destination,
@@ -129,9 +129,8 @@ func (as *ShelfStore) Update(m domain.ShelfInput, id int) (*domain.Shelf, error)
 		ctx,
 		`UPDATE shelf SET 
 			name = @name,
-			destination = @destination
              WHERE id = @id 
-             returning  id, name, destination, created_at, updated_at`,
+             returning  id, name, created_at, updated_at`,
 		pgx.NamedArgs{
 			"id":          id,
 			"name":        m.Name,
