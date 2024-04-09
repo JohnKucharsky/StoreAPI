@@ -2,15 +2,20 @@ package domain
 
 type OperationsStore interface {
 	OneShelfToManyProducts(m PlaceProductInput) (*PlaceProduct, error)
-	GetAssemblyInfoByOrders(m []int) ([]*AssemblyInfo, error)
+	GetAssemblyInfoByOrders(m []int) ([]AssemblyInfo, error)
+}
+
+type AssemblyProduct struct {
+	ProductID       int    `json:"product_id"`
+	ProductName     string `json:"product_name"`
+	OrderID         int    `json:"order_id"`
+	Quantity        int    `json:"quantity"`
+	AdditionalShelf *int   `json:"additional_shelf"`
 }
 
 type AssemblyInfo struct {
-	OrderID     int     `db:"order_id" json:"order_id"`
-	ProductID   *int    `db:"product_id" json:"product_id"`
-	ProductName *string `db:"product_name" json:"product_name"`
-	Quantity    *int    `db:"quantity" json:"quantity"`
-	ShelfName   *string `db:"shelf_name" json:"shelf_name"`
+	Name     string            `json:"name"`
+	Products []AssemblyProduct `json:"products"`
 }
 
 type ShelfProductDB struct {
