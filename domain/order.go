@@ -31,8 +31,9 @@ type OrderShort struct {
 }
 
 type OrderProductDB struct {
-	ProductID int `json:"product_id" db:"product_id"`
-	OrderID   int `json:"order_id" db:"order_id"`
+	ProductID  int `db:"product_id"`
+	ProductQty int `db:"product_qty"`
+	OrderID    int `db:"order_id"`
 }
 
 type ProductIdQty struct {

@@ -74,7 +74,6 @@ func Register(r *fiber.App, db *pgxpool.Pool, redis *redis.Client) {
 
 	//operations
 	operations := v1.Group("/operations")
-	operations.Put("/place_product", h.DeserializeUser, h.PutProductsOnShelf)
 	operations.Get("/assembly_info", h.DeserializeUser, h.GetAssemblyInfo)
 	//end shelf
 }

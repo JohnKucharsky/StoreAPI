@@ -53,14 +53,13 @@ func (store *OrderStore) Create(m domain.OrderInput) (
 	if len(m.Products) == 0 {
 		return nil, errors.New("categories array is empty")
 	}
-	var productIds []int
-	for _, product := range m.Products {
-		for range product.Quantity {
-			productIds = append(productIds, product.ProductID)
+
+	if len(m.Products) != 0 {
+		if err := store.BulkInsertProducts(res.ID, m.Products); err != nil {
+			return nil, err
 		}
-	}
-	if err := store.BulkInsertProducts(res.ID, productIds); err != nil {
-		return nil, err
+	} else {
+		return nil, errors.New("you should add at least one product")
 	}
 
 	return res, nil
@@ -138,15 +137,11 @@ func (store *OrderStore) Update(m domain.OrderInput, id int) (*domain.OrderShort
 	}
 
 	if len(m.Products) != 0 {
-		var productIds []int
-		for _, product := range m.Products {
-			for range product.Quantity {
-				productIds = append(productIds, product.ProductID)
-			}
-		}
-		if err := store.BulkUpdateProducts(res.ID, productIds); err != nil {
+		if err := store.BulkUpdateProducts(res.ID, m.Products); err != nil {
 			return nil, err
 		}
+	} else {
+		return nil, errors.New("you should add at least one product")
 	}
 
 	return res, nil
@@ -210,7 +205,7 @@ func (store *OrderStore) BulkDeleteProducts(orderID int, products []int) error {
 	return nil
 }
 
-func (store *OrderStore) BulkInsertProducts(orderID int, products []int) error {
+func (store *OrderStore) BulkInsertProducts(orderID int, products []domain.ProductIdQty) error {
 	ctx := context.Background()
 
 	createParams := pgx.NamedArgs{
@@ -219,15 +214,19 @@ func (store *OrderStore) BulkInsertProducts(orderID int, products []int) error {
 	var valuesStringArr []string
 
 	for idx, product := range products {
-		productString := strconv.Itoa(product)
+		pID := strconv.Itoa(product.ProductID)
+		pQty := strconv.Itoa(product.Quantity)
 		idxString := strconv.Itoa(idx + 1)
 
-		valuesStringArr = append(valuesStringArr, fmt.Sprintf("(@order_id, @%s)", fmt.Sprintf("ord%s", idxString)))
-		createParams[fmt.Sprintf("ord%s", idxString)] = productString
+		valuesStringArr = append(valuesStringArr, fmt.Sprintf("(@order_id, @%s, @%s)",
+			fmt.Sprintf("p%s", idxString),
+			fmt.Sprintf("q%s", idxString)))
+		createParams[fmt.Sprintf("p%s", idxString)] = pID
+		createParams[fmt.Sprintf("q%s", idxString)] = pQty
 	}
 
 	sql := fmt.Sprintf(`
-		insert into order_product (order_id, product_id)
+		insert into order_product (order_id, product_id,product_qty)
 		values %s `, strings.Join(valuesStringArr, ", "),
 	)
 
@@ -239,37 +238,82 @@ func (store *OrderStore) BulkInsertProducts(orderID int, products []int) error {
 	return nil
 }
 
-func (store *OrderStore) BulkUpdateProducts(orderID int, products []int) error {
+func (store *OrderStore) BulkUpdateProducts(orderID int, products []domain.ProductIdQty) error {
 	ctx := context.Background()
 
 	rows, err := store.db.Query(
-		ctx, `select order_id,product_id from order_product where order_id = @id`, pgx.NamedArgs{"id": orderID},
+		ctx, `select order_id,product_id,product_qty from order_product
+    where order_id = @order_id`, pgx.NamedArgs{"order_id": orderID},
 	)
 	if err != nil {
 		return err
 	}
 
-	resProducts, err := pgx.CollectRows(
-		rows, pgx.RowToAddrOfStructByName[domain.OrderProductDB],
+	orderProductDB, err := pgx.CollectRows(
+		rows, pgx.RowToStructByName[domain.OrderProductDB],
 	)
 	if err != nil {
 		return err
 	}
 
+	// add or delete
 	var productsDbIDs []int
-	for _, product := range resProducts {
+	for _, product := range orderProductDB {
 		productsDbIDs = append(productsDbIDs, product.ProductID)
 	}
+	var productsInputIDs []int
+	for _, product := range products {
+		productsInputIDs = append(productsInputIDs, product.ProductID)
+	}
+	productsIdsAdd, productsIdsToDelete := lo.Difference(productsInputIDs, productsDbIDs)
+	var productsToAdd []domain.ProductIdQty
+	for _, product := range products {
+		for _, productID := range productsIdsAdd {
+			if product.ProductID != productID {
+				continue
+			}
+			productsToAdd = append(productsToAdd, product)
 
-	productsToAdd, productsToDelete := lo.Difference(products, productsDbIDs)
+		}
+	}
 	if len(productsToAdd) != 0 {
 		if err := store.BulkInsertProducts(orderID, productsToAdd); err != nil {
 			return nil
 		}
 	}
-	if len(productsToDelete) != 0 {
-		if err := store.BulkDeleteProducts(orderID, productsToDelete); err != nil {
+	if len(productsIdsToDelete) != 0 {
+		if err := store.BulkDeleteProducts(orderID, productsIdsToDelete); err != nil {
 			return nil
+		}
+	}
+	// add or delete and
+
+	// change qty on products
+	var filteredOrderProduct = lo.Filter(orderProductDB, func(item domain.OrderProductDB, index int) bool {
+		return !lo.Contains(productsIdsToDelete, item.ProductID)
+	})
+
+	var inputProductsMap = make(map[int]domain.ProductIdQty)
+	for _, product := range products {
+		inputProductsMap[product.ProductID] = product
+	}
+
+	for _, filtOrdProd := range filteredOrderProduct {
+		if filtOrdProd.ProductQty != inputProductsMap[filtOrdProd.ProductID].Quantity {
+			var product = inputProductsMap[filtOrdProd.ProductID]
+
+			_, err := store.db.Exec(ctx, `
+			UPDATE order_product SET 
+			product_qty = @product_qty
+             WHERE product_id = @product_id and order_id = @order_id`,
+				pgx.NamedArgs{
+					"product_qty": product.Quantity,
+					"product_id":  product.ProductID,
+					"order_id":    orderID,
+				})
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -281,20 +325,58 @@ func (store *OrderStore) GetProductsForOrder(id int) ([]*domain.ProductWithQty, 
 
 	rows, err := store.db.Query(
 		ctx, `
-		select product.*, count(product.id) quantity from order_product 
-	left join product on product_id = product.id  where order_id = @id group by product.id;
-     `, pgx.NamedArgs{"id": id},
+		select * from order_product  where order_id = @order_id;
+     `, pgx.NamedArgs{"order_id": id},
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := pgx.CollectRows(
-		rows, pgx.RowToAddrOfStructByName[domain.ProductWithQty],
+	orderProductDB, err := pgx.CollectRows(
+		rows, pgx.RowToStructByName[domain.OrderProductDB],
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return res, nil
+	var idsToGetProducts []int
+	for _, orderPDB := range orderProductDB {
+		idsToGetProducts = append(idsToGetProducts, orderPDB.ProductID)
+	}
+	if len(idsToGetProducts) == 0 {
+		return nil, errors.New("you have to buy some products")
+	}
+
+	// get product in ids
+	productsRows, err := store.db.Query(
+		ctx, `select * from product where id = any ($1);`,
+		idsToGetProducts,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	productRes, err := pgx.CollectRows(
+		productsRows, pgx.RowToStructByName[domain.Product],
+	)
+	if err != nil {
+		return nil, err
+	}
+	// get product in ids end
+
+	productMap := make(map[int]domain.Product)
+	for _, product := range productRes {
+		productMap[product.ID] = product
+	}
+
+	var response []*domain.ProductWithQty
+	for _, orderProduct := range orderProductDB {
+		var productWithQty = domain.ProductWithQty{
+			Product:  productMap[orderProduct.ProductID],
+			Quantity: orderProduct.ProductQty,
+		}
+		response = append(response, &productWithQty)
+	}
+
+	return response, nil
 }

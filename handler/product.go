@@ -18,37 +18,6 @@ func (h *Handler) CreateProduct(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(utils.ErrorRes(err.Error()))
 	}
 
-	if product.MainShelfID != nil {
-		var assignShelfInput = domain.PlaceProductInput{
-			ShelfID:    *product.MainShelfID,
-			ProductIDs: []int{product.ID},
-		}
-
-		_, err := h.operationsStore.OneShelfToManyProducts(assignShelfInput)
-		if err != nil {
-			return c.Status(http.StatusBadRequest).JSON(utils.ErrorRes(err.Error()))
-		}
-	} else {
-		randomShelfID, err := h.shelfStore.GetRandomShelfID()
-		if err != nil {
-			return c.Status(http.StatusBadRequest).JSON(utils.ErrorRes(err.Error()))
-		}
-
-		if randomShelfID != nil {
-			var assignShelfInput = domain.PlaceProductInput{
-				ShelfID:    *randomShelfID,
-				ProductIDs: []int{product.ID},
-			}
-
-			_, err = h.operationsStore.OneShelfToManyProducts(assignShelfInput)
-			if err != nil {
-				return c.Status(http.StatusBadRequest).JSON(utils.ErrorRes(err.Error()))
-			}
-		} else {
-			return c.Status(http.StatusBadRequest).JSON(utils.ErrorRes("Unable to place product on shelf, please add shelves"))
-		}
-	}
-
 	return c.Status(http.StatusCreated).JSON(utils.SuccessRes(product))
 }
 
@@ -89,39 +58,6 @@ func (h *Handler) UpdateProduct(c *fiber.Ctx) error {
 	product, err := h.productStore.Update(input, inputID)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(utils.ErrorRes(err.Error()))
-	}
-
-	if product.MainShelfID != nil {
-		var assignShelfInput = domain.PlaceProductInput{
-			ShelfID:    *product.MainShelfID,
-			ProductIDs: []int{product.ID},
-		}
-
-		_, err := h.operationsStore.OneShelfToManyProducts(assignShelfInput)
-
-		if err != nil {
-			return c.Status(http.StatusBadRequest).JSON(utils.ErrorRes(err.Error()))
-		}
-	} else {
-		randomShelfID, err := h.shelfStore.GetRandomShelfID()
-		if err != nil {
-			return c.Status(http.StatusBadRequest).JSON(utils.ErrorRes(err.Error()))
-		}
-
-		if randomShelfID != nil {
-			var assignShelfInput = domain.PlaceProductInput{
-				ShelfID:    *product.MainShelfID,
-				ProductIDs: []int{*randomShelfID},
-			}
-
-			_, err = h.operationsStore.OneShelfToManyProducts(assignShelfInput)
-
-			if err != nil {
-				return c.Status(http.StatusBadRequest).JSON(utils.ErrorRes(err.Error()))
-			}
-		} else {
-			return c.Status(http.StatusBadRequest).JSON(utils.ErrorRes("Unable to place product on shelf, please add shelves"))
-		}
 	}
 
 	return c.Status(http.StatusCreated).JSON(utils.SuccessRes(product))
