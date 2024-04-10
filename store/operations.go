@@ -90,7 +90,7 @@ func (store *OperationsStore) GetAssemblyInfoByOrders(m []int) (
 
 	// get shelf_product in ids
 	shelfProductRows, err := store.db.Query(
-		ctx, `select shelf_id, product_id from shelf_product where product_id = any ($1);`,
+		ctx, `select shelf_id, product_id, product_qty from shelf_product where product_id = any ($1);`,
 		productIdsToGetShelves,
 	)
 	if err != nil {
@@ -131,9 +131,9 @@ func (store *OperationsStore) GetAssemblyInfoByOrders(m []int) (
 	for _, orderProduct := range orderProduct {
 		productOrderMap[orderProduct.ProductID] = orderProduct.OrderID
 	}
-	productShelfMap := make(map[int]*int)
+	productShelfMap := make(map[int]*domain.ShelfProductDB)
 	for _, shelfP := range shelfProduct {
-		productShelfMap[shelfP.ProductID] = &shelfP.ShelfID
+		productShelfMap[shelfP.ProductID] = &shelfP
 	}
 	productMap := make(map[int]ProductShort)
 	for _, product := range productRes {
@@ -153,14 +153,14 @@ func (store *OperationsStore) GetAssemblyInfoByOrders(m []int) (
 			var orderID = productOrderMap[product.ProductID]
 			var additionalShelf *int
 			if productMap[product.ProductID].MainShelfID != nil {
-				additionalShelf = productShelfMap[product.ProductID]
+				additionalShelf = &productShelfMap[product.ProductID].ShelfID
 			}
 
 			assemblyProduct := domain.AssemblyProduct{
 				ProductID:       product.ProductID,
 				ProductName:     productMap[product.ProductID].Name,
 				OrderID:         orderID,
-				Quantity:        0,
+				Quantity:        productShelfMap[product.ProductID].ProductQty,
 				AdditionalShelf: additionalShelf,
 			}
 

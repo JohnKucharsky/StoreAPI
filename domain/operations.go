@@ -18,8 +18,9 @@ type AssemblyInfo struct {
 }
 
 type ShelfProductDB struct {
-	ShelfID   int `db:"shelf_id"`
-	ProductID int `db:"product_id"`
+	ShelfID    int `db:"shelf_id"`
+	ProductID  int `db:"product_id"`
+	ProductQty int `db:"product_qty"`
 }
 
 type OrdersListInput struct {

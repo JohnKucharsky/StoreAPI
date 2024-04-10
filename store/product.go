@@ -2,9 +2,14 @@ package store
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/JohnKucharsky/StoreAPI/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/samber/lo"
+	"strconv"
+	"strings"
 )
 
 type ProductStore struct {
@@ -17,13 +22,157 @@ func NewProductStore(db *pgxpool.Pool) *ProductStore {
 	}
 }
 
-func (as *ProductStore) Create(m domain.ProductInput) (
+func (store *ProductStore) BulkDeleteShelves(productID int, shelvesIDs []int) error {
+	ctx := context.Background()
+
+	params := pgx.NamedArgs{
+		"product_id": productID,
+	}
+	var valuesStringArr []string
+
+	for idx, shelf := range shelvesIDs {
+		shelfID := strconv.Itoa(shelf)
+		idx := strconv.Itoa(idx + 1)
+
+		valuesStringArr = append(valuesStringArr, fmt.Sprintf("@%s", fmt.Sprintf("p%s", idx)))
+		params[fmt.Sprintf("p%s", idx)] = shelfID
+	}
+
+	sql := fmt.Sprintf(`
+		delete from shelf_product where product_id = @product_id and
+		shelf_product.shelf_id in (%s) `, strings.Join(valuesStringArr, ", "),
+	)
+
+	_, err := store.db.Exec(ctx, sql, params)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (store *ProductStore) BulkInsertShelves(productID int, shelves []domain.ShelfIdQty) error {
+	ctx := context.Background()
+
+	params := pgx.NamedArgs{
+		"product_id": productID,
+	}
+	var valuesStringArr []string
+
+	for idx, shelf := range shelves {
+		sID := strconv.Itoa(shelf.ShelfID)
+		pQty := strconv.Itoa(shelf.Quantity)
+		idxString := strconv.Itoa(idx + 1)
+
+		valuesStringArr = append(valuesStringArr, fmt.Sprintf("(@product_id, @%s, @%s)",
+			fmt.Sprintf("p%s", idxString),
+			fmt.Sprintf("q%s", idxString)))
+		params[fmt.Sprintf("p%s", idxString)] = sID
+		params[fmt.Sprintf("q%s", idxString)] = pQty
+	}
+
+	sql := fmt.Sprintf(`
+		insert into shelf_product (product_id, shelf_id, product_qty)
+		values %s `, strings.Join(valuesStringArr, ", "),
+	)
+
+	_, err := store.db.Exec(ctx, sql, params)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (store *ProductStore) BulkUpdateShelves(productID int, shelves []domain.ShelfIdQty) error {
+	ctx := context.Background()
+
+	rows, err := store.db.Query(
+		ctx, `select shelf_id,product_id,product_qty from shelf_product
+    where product_id = @product_id`, pgx.NamedArgs{"product_id": productID},
+	)
+	if err != nil {
+		return err
+	}
+
+	shelfProductDB, err := pgx.CollectRows(
+		rows, pgx.RowToStructByName[domain.ShelfProductDB],
+	)
+	if err != nil {
+		return err
+	}
+
+	// add or delete
+	var shelvesDbIDs []int
+	for _, shelf := range shelfProductDB {
+		shelvesDbIDs = append(shelvesDbIDs, shelf.ShelfID)
+	}
+	var shelvesInputIDs []int
+	for _, shelf := range shelves {
+		shelvesInputIDs = append(shelvesInputIDs, shelf.ShelfID)
+	}
+	shelvesIdsToAdd, shelvesIdsToDelete := lo.Difference(shelvesInputIDs, shelvesDbIDs)
+	var shelvesToAdd []domain.ShelfIdQty
+	for _, shelf := range shelves {
+		for _, shelfID := range shelvesIdsToAdd {
+			if shelf.ShelfID != shelfID {
+				continue
+			}
+			shelvesToAdd = append(shelvesToAdd, shelf)
+
+		}
+	}
+	if len(shelvesToAdd) != 0 {
+		if err := store.BulkInsertShelves(productID, shelvesToAdd); err != nil {
+			return nil
+		}
+	}
+	if len(shelvesIdsToDelete) != 0 {
+		if err := store.BulkDeleteShelves(productID, shelvesIdsToDelete); err != nil {
+			return nil
+		}
+	}
+	// add or delete and
+
+	// change qty on products
+	var filteredShelfProduct = lo.Filter(shelfProductDB, func(item domain.ShelfProductDB, index int) bool {
+		return !lo.Contains(shelvesIdsToDelete, item.ShelfID)
+	})
+
+	var inputShelvesMap = make(map[int]domain.ShelfIdQty)
+	for _, shelf := range shelves {
+		inputShelvesMap[shelf.ShelfID] = shelf
+	}
+
+	for _, filtShelfProduct := range filteredShelfProduct {
+		if filtShelfProduct.ProductQty != inputShelvesMap[filtShelfProduct.ShelfID].Quantity {
+			var shelf = inputShelvesMap[filtShelfProduct.ShelfID]
+
+			_, err := store.db.Exec(ctx, `
+			UPDATE shelf_product SET 
+			product_qty = @product_qty
+             WHERE product_id = @product_id and shelf_id = @shelf_id`,
+				pgx.NamedArgs{
+					"product_qty": shelf.Quantity,
+					"product_id":  productID,
+					"shelf_id":    shelf.ShelfID,
+				})
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (store *ProductStore) Create(m domain.ProductInput) (
 	*domain.Product,
 	error,
 ) {
 	ctx := context.Background()
 
-	rows, err := as.db.Query(
+	rows, err := store.db.Query(
 		ctx, `
         INSERT INTO product (main_shelf_id, name, serial, price, model, picture_url)
         VALUES (@main_shelf_id, @name, @serial, @price, @model, @picture_url)
@@ -49,13 +198,21 @@ func (as *ProductStore) Create(m domain.ProductInput) (
 		return nil, err
 	}
 
+	if len(m.Shelves) != 0 {
+		if err := store.BulkInsertShelves(res.ID, m.Shelves); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("you should add at least one shelf")
+	}
+
 	return res, nil
 }
 
-func (as *ProductStore) GetMany() ([]*domain.Product, error) {
+func (store *ProductStore) GetMany() ([]*domain.Product, error) {
 	ctx := context.Background()
 
-	rows, err := as.db.Query(
+	rows, err := store.db.Query(
 		ctx, `
 		select * from product;
      `,
@@ -74,10 +231,10 @@ func (as *ProductStore) GetMany() ([]*domain.Product, error) {
 	return res, nil
 }
 
-func (as *ProductStore) GetOne(id int) (*domain.Product, error) {
+func (store *ProductStore) GetOne(id int) (*domain.Product, error) {
 	ctx := context.Background()
 
-	rows, err := as.db.Query(
+	rows, err := store.db.Query(
 		ctx,
 		`select * from product where id = @id`,
 		pgx.NamedArgs{"id": id},
@@ -96,10 +253,10 @@ func (as *ProductStore) GetOne(id int) (*domain.Product, error) {
 	return res, nil
 }
 
-func (as *ProductStore) Update(m domain.ProductInput, id int) (*domain.Product, error) {
+func (store *ProductStore) Update(m domain.ProductInput, id int) (*domain.Product, error) {
 	ctx := context.Background()
 
-	rows, err := as.db.Query(
+	rows, err := store.db.Query(
 		ctx,
 		`UPDATE product SET 
 			main_shelf_id = @main_shelf_id,
@@ -117,7 +274,7 @@ func (as *ProductStore) Update(m domain.ProductInput, id int) (*domain.Product, 
 			"serial":        m.Serial,
 			"price":         m.Price,
 			"model":         m.Model,
-			"picture_url":   m.AdditionalInfo,
+			"picture_url":   m.PictureURL,
 		},
 	)
 	if err != nil {
@@ -131,13 +288,21 @@ func (as *ProductStore) Update(m domain.ProductInput, id int) (*domain.Product, 
 		return nil, err
 	}
 
+	if len(m.Shelves) != 0 {
+		if err := store.BulkUpdateShelves(res.ID, m.Shelves); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("you should add at least one shelf")
+	}
+
 	return res, nil
 }
 
-func (as *ProductStore) Delete(id int) (*int, error) {
+func (store *ProductStore) Delete(id int) (*int, error) {
 	ctx := context.Background()
 
-	rows, err := as.db.Query(
+	rows, err := store.db.Query(
 		ctx,
 		`delete from product where id = @id 
         returning id`,
