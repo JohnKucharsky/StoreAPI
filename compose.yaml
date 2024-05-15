@@ -26,7 +26,7 @@ services:
      restart: always
      user: postgres
      volumes:
-       - progresDB:/var/lib/postgresql/data
+       - postgresDB:/var/lib/postgresql/data
      environment:
        - POSTGRES_DB=data
        - POSTGRES_PASSWORD=pass
@@ -63,6 +63,6 @@ services:
     volumes:
       - ./db/migrations:/migrations
 volumes:
-  progresDB:
+  postgresDB:
   redisDB:
 
