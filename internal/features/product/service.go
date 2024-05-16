@@ -14,10 +14,10 @@ type (
 	}
 
 	productService struct {
-		repository *ProductStore
+		repository StoreI
 	}
 )
 
-func New(store *ProductStore) Service {
+func New(store *Store) Service {
 	return &productService{repository: store}
 }

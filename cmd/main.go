@@ -32,7 +32,7 @@ func main() {
 			},
 		),
 	)
-	// check
+
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
@@ -46,7 +46,7 @@ func main() {
 	internal.Register(f, d, redis)
 	f.Get(
 		"/api", func(c *fiber.Ctx) error {
-			if err := c.SendFile("./api/index.html"); err != nil {
+			if err := c.SendFile("../api/index.html"); err != nil {
 				err := c.SendStatus(http.StatusBadRequest)
 				if err != nil {
 					return nil

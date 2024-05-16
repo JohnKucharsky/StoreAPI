@@ -9,7 +9,7 @@ import (
 )
 
 type (
-	ShelfStoreI interface {
+	StoreI interface {
 		Create(ctx *fasthttp.RequestCtx, m domain.ShelfInput) (*domain.Shelf, error)
 		GetMany(ctx *fasthttp.RequestCtx) ([]*domain.Shelf, error)
 		GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.Shelf, error)
@@ -17,18 +17,22 @@ type (
 		Delete(ctx *fasthttp.RequestCtx, id int) (*int, error)
 	}
 
-	ShelfStore struct {
+	Store struct {
 		db *pgxpool.Pool
+	}
+
+	IdRes struct {
+		ID int `db:"id"`
 	}
 )
 
-func NewShelfStore(db *pgxpool.Pool) *ShelfStore {
-	return &ShelfStore{
+func NewShelfStore(db *pgxpool.Pool) *Store {
+	return &Store{
 		db: db,
 	}
 }
 
-func (store *ShelfStore) Create(ctx *fasthttp.RequestCtx, m domain.ShelfInput) (
+func (store *Store) Create(ctx *fasthttp.RequestCtx, m domain.ShelfInput) (
 	*domain.Shelf,
 	error,
 ) {
@@ -42,24 +46,22 @@ func (store *ShelfStore) Create(ctx *fasthttp.RequestCtx, m domain.ShelfInput) (
 	}
 
 	return shared.GetOneRow[domain.Shelf](ctx, store.db, sql, args)
-
 }
 
-func (store *ShelfStore) GetMany(ctx *fasthttp.RequestCtx) ([]*domain.Shelf, error) {
+func (store *Store) GetMany(ctx *fasthttp.RequestCtx) ([]*domain.Shelf, error) {
 	sql := `select * from shelf`
 
 	return shared.GetManyRows[domain.Shelf](ctx, store.db, sql, pgx.NamedArgs{})
 }
 
-func (store *ShelfStore) GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.Shelf, error) {
+func (store *Store) GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.Shelf, error) {
 	sql := `select * from shelf where id = @id`
 	args := pgx.NamedArgs{"id": id}
 
 	return shared.GetOneRow[domain.Shelf](ctx, store.db, sql, args)
-
 }
 
-func (store *ShelfStore) Update(ctx *fasthttp.RequestCtx, m domain.ShelfInput, id int) (*domain.Shelf, error) {
+func (store *Store) Update(ctx *fasthttp.RequestCtx, m domain.ShelfInput, id int) (*domain.Shelf, error) {
 	sql := `UPDATE shelf SET 
 			name = @name,
              WHERE id = @id 
@@ -73,19 +75,14 @@ func (store *ShelfStore) Update(ctx *fasthttp.RequestCtx, m domain.ShelfInput, i
 	return shared.GetOneRow[domain.Shelf](ctx, store.db, sql, args)
 }
 
-func (store *ShelfStore) Delete(ctx *fasthttp.RequestCtx, id int) (*int, error) {
+func (store *Store) Delete(ctx *fasthttp.RequestCtx, id int) (*int, error) {
 	sql := `delete from shelf where id = @id 
         returning id`
 	args := pgx.NamedArgs{
 		"id": id,
 	}
 
-	type IdRes struct {
-		ID int `db:"id"`
-	}
-
 	res, err := shared.GetOneRow[IdRes](ctx, store.db, sql, args)
-
 	if err != nil {
 		return nil, err
 	}

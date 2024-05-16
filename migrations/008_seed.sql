@@ -12,8 +12,8 @@ insert into product (name, serial, price, model, picture_url) values
  ('Vacuum', '42ssg', 650, null, 'https://picture.23rh.com'),
  ('Watch', '34csso34j', 1600, 'Rolex', 'https://picture.2dkjh.com');
 
-insert into shelf_product (shelf_id, product_id) values
-    (2,1),(3,2),(1,3),(2,4),(1,5);
+insert into shelf_product (shelf_id, product_id, product_qty) values
+    (2,1),(3,2,2),(1,3),(2,4,4),(1,5);
 
 insert into orders (address_id, payment) VALUES
     (1,'cash');

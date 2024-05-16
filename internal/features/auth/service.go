@@ -15,10 +15,10 @@ type (
 	}
 
 	authService struct {
-		repository *AuthStore
+		repository StoreI
 	}
 )
 
-func New(store *AuthStore) Service {
+func New(store *Store) Service {
 	return &authService{repository: store}
 }

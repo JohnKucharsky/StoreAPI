@@ -21,12 +21,6 @@ type OrderShort struct {
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
-type OrderProductDB struct {
-	ProductID  int `db:"product_id"`
-	ProductQty int `db:"product_qty"`
-	OrderID    int `db:"order_id"`
-}
-
 type ProductIdQty struct {
 	ProductID int `json:"product_id" validate:"required"`
 	Quantity  int `json:"quantity" validate:"required"`

@@ -14,10 +14,10 @@ type (
 	}
 
 	shelfService struct {
-		repository *ShelfStore
+		repository StoreI
 	}
 )
 
-func New(store *ShelfStore) Service {
+func New(store *Store) Service {
 	return &shelfService{repository: store}
 }

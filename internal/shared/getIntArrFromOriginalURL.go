@@ -20,7 +20,11 @@ func GetIntArrFromOriginalURL(c *fiber.Ctx, key string) (*[]int, error) {
 	for _, str := range secondSplit {
 		idStringArr := strings.Split(str, "=")
 		idInt, err := strconv.Atoi(idStringArr[1])
-		if err == nil && idStringArr[0] == key {
+		if err != nil {
+			return nil, err
+		}
+
+		if idStringArr[0] == key {
 			intArr = append(intArr, idInt)
 		}
 	}

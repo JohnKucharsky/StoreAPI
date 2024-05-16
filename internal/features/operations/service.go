@@ -10,10 +10,10 @@ type (
 	}
 
 	operationsService struct {
-		repository *OperationsStore
+		repository StoreI
 	}
 )
 
-func New(store *OperationsStore) Service {
+func New(store *Store) Service {
 	return &operationsService{repository: store}
 }

@@ -10,7 +10,7 @@ import (
 )
 
 type (
-	AddressStoreI interface {
+	StoreI interface {
 		Create(ctx *fasthttp.RequestCtx, m domain.AddressInput) (*domain.Address, error)
 		GetMany(ctx *fasthttp.RequestCtx) ([]*domain.Address, error)
 		GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.Address, error)
@@ -18,23 +18,26 @@ type (
 		Delete(ctx *fasthttp.RequestCtx, id int) (*int, error)
 	}
 
-	AddressStore struct {
+	Store struct {
 		db *pgxpool.Pool
+	}
+
+	idRes struct {
+		ID int `db:"id"`
 	}
 )
 
-func NewAddressStore(db *pgxpool.Pool) *AddressStore {
-	return &AddressStore{
+func NewAddressStore(db *pgxpool.Pool) *Store {
+	return &Store{
 		db: db,
 	}
 }
 
-func (store *AddressStore) Create(ctx *fasthttp.RequestCtx, m domain.AddressInput) (
+func (store *Store) Create(ctx *fasthttp.RequestCtx, m domain.AddressInput) (
 	*domain.Address,
 	error,
 ) {
-	sql := `
-        INSERT INTO address (city, street, house, floor, entrance, additional_info)
+	sql := `INSERT INTO address (city, street, house, floor, entrance, additional_info)
         VALUES (@city, @street, @house, @floor, @entrance, @additional_info)
         RETURNING id, city, street, house, floor, entrance, additional_info, created_at, updated_at`
 	args := pgx.NamedArgs{
@@ -50,50 +53,21 @@ func (store *AddressStore) Create(ctx *fasthttp.RequestCtx, m domain.AddressInpu
 
 }
 
-func (store *AddressStore) GetMany(ctx *fasthttp.RequestCtx) ([]*domain.Address, error) {
-	rows, err := store.db.Query(
-		ctx, `
-		select * from address;
-     `,
-	)
-	if err != nil {
-		return nil, err
-	}
+func (store *Store) GetMany(ctx *fasthttp.RequestCtx) ([]*domain.Address, error) {
+	sql := `select * from address`
 
-	res, err := pgx.CollectRows(
-		rows, pgx.RowToAddrOfStructByName[domain.Address],
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
+	return shared.GetManyRows[domain.Address](ctx, store.db, sql, pgx.NamedArgs{})
 }
 
-func (store *AddressStore) GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.Address, error) {
-	rows, err := store.db.Query(
-		ctx,
-		`select * from address where id = @id`,
-		pgx.NamedArgs{"id": id},
-	)
-	if err != nil {
-		return nil, err
-	}
+func (store *Store) GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.Address, error) {
+	sql := `select * from address where id = @id`
+	args := pgx.NamedArgs{"id": id}
 
-	res, err := pgx.CollectExactlyOneRow(
-		rows, pgx.RowToAddrOfStructByName[domain.Address],
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
+	return shared.GetOneRow[domain.Address](ctx, store.db, sql, args)
 }
 
-func (store *AddressStore) Update(ctx *fasthttp.RequestCtx, m domain.AddressInput, id int) (*domain.Address, error) {
-	rows, err := store.db.Query(
-		ctx,
-		`UPDATE address SET 
+func (store *Store) Update(ctx *fasthttp.RequestCtx, m domain.AddressInput, id int) (*domain.Address, error) {
+	sql := `UPDATE address SET 
 			city = @city,
 			street = @street,
 			house = @house,
@@ -102,55 +76,30 @@ func (store *AddressStore) Update(ctx *fasthttp.RequestCtx, m domain.AddressInpu
 			additional_info = @additional_info,
 			updated_at = @updated_at
              WHERE id = @id 
-             returning  id, city, street, house, floor, entrance, additional_info, created_at, updated_at`,
-		pgx.NamedArgs{
-			"id":              id,
-			"city":            m.City,
-			"street":          m.Street,
-			"house":           m.House,
-			"floor":           m.Floor,
-			"entrance":        m.Entrance,
-			"additional_info": m.AdditionalInfo,
-			"updated_at":      time.Now(),
-		},
-	)
-	if err != nil {
-		return nil, err
+             returning  id, city, street, house, floor, entrance, additional_info, created_at, updated_at`
+	args := pgx.NamedArgs{
+		"id":              id,
+		"city":            m.City,
+		"street":          m.Street,
+		"house":           m.House,
+		"floor":           m.Floor,
+		"entrance":        m.Entrance,
+		"additional_info": m.AdditionalInfo,
+		"updated_at":      time.Now(),
 	}
 
-	res, err := pgx.CollectExactlyOneRow(
-		rows, pgx.RowToAddrOfStructByName[domain.Address],
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
+	return shared.GetOneRow[domain.Address](ctx, store.db, sql, args)
 }
 
-func (store *AddressStore) Delete(ctx *fasthttp.RequestCtx, id int) (*int, error) {
-	rows, err := store.db.Query(
-		ctx,
-		`delete from address where id = @id 
-        returning id`,
-		pgx.NamedArgs{
-			"id": id,
-		},
-	)
+func (store *Store) Delete(ctx *fasthttp.RequestCtx, id int) (*int, error) {
+	sql := `delete from address where id = @id 
+        returning id`
+	args := pgx.NamedArgs{"id": id}
+
+	one, err := shared.GetOneRow[idRes](ctx, store.db, sql, args)
 	if err != nil {
 		return nil, err
 	}
 
-	type idRes struct {
-		ID int `db:"id"`
-	}
-
-	res, err := pgx.CollectExactlyOneRow(
-		rows, pgx.RowToAddrOfStructByName[idRes],
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return &res.ID, nil
+	return &one.ID, nil
 }

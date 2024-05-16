@@ -14,7 +14,7 @@ import (
 )
 
 type (
-	OrderStoreI interface {
+	StoreI interface {
 		Create(ctx *fasthttp.RequestCtx, m domain.OrderInput) (*domain.OrderShort, error)
 		GetMany(ctx *fasthttp.RequestCtx) ([]*domain.OrderShort, error)
 		GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.OrderShort, error)
@@ -24,18 +24,28 @@ type (
 		GetProductsForOrder(ctx *fasthttp.RequestCtx, id int) ([]*domain.ProductWithQty, error)
 	}
 
-	OrderStore struct {
+	Store struct {
 		db *pgxpool.Pool
+	}
+
+	OrderProductDB struct {
+		ProductID  int `db:"product_id"`
+		ProductQty int `db:"product_qty"`
+		OrderID    int `db:"order_id"`
+	}
+
+	idRes struct {
+		ID int `db:"id"`
 	}
 )
 
-func NewOrderStore(db *pgxpool.Pool) *OrderStore {
-	return &OrderStore{
+func NewOrderStore(db *pgxpool.Pool) *Store {
+	return &Store{
 		db: db,
 	}
 }
 
-func (store *OrderStore) Create(ctx *fasthttp.RequestCtx, m domain.OrderInput) (
+func (store *Store) Create(ctx *fasthttp.RequestCtx, m domain.OrderInput) (
 	*domain.OrderShort,
 	error,
 ) {
@@ -63,87 +73,39 @@ func (store *OrderStore) Create(ctx *fasthttp.RequestCtx, m domain.OrderInput) (
 	return order, nil
 }
 
-func (store *OrderStore) GetMany(ctx *fasthttp.RequestCtx) ([]*domain.OrderShort, error) {
-	rows, err := store.db.Query(
-		ctx, `
-		select * from orders;
-     `,
-	)
-	if err != nil {
-		return nil, err
-	}
+func (store *Store) GetMany(ctx *fasthttp.RequestCtx) ([]*domain.OrderShort, error) {
+	sql := `select * from orders`
 
-	res, err := pgx.CollectRows(
-		rows, pgx.RowToAddrOfStructByName[domain.OrderShort],
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
+	return shared.GetManyRows[domain.OrderShort](ctx, store.db, sql, pgx.NamedArgs{})
 }
 
-func (store *OrderStore) GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.OrderShort, error) {
-	rows, err := store.db.Query(
-		ctx,
-		`select * from orders where id = @id`,
-		pgx.NamedArgs{"id": id},
-	)
-	if err != nil {
-		return nil, err
-	}
+func (store *Store) GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.OrderShort, error) {
+	sql := `select * from orders where id = @id`
+	args := pgx.NamedArgs{"id": id}
 
-	res, err := pgx.CollectExactlyOneRow(
-		rows, pgx.RowToAddrOfStructByName[domain.OrderShort],
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
+	return shared.GetOneRow[domain.OrderShort](ctx, store.db, sql, args)
 }
 
-func (store *OrderStore) GetAddress(ctx *fasthttp.RequestCtx, id int) (*domain.Address, error) {
-	rows, err := store.db.Query(
-		ctx,
-		`select * from address where id = @id`,
-		pgx.NamedArgs{"id": id},
-	)
-	if err != nil {
-		return nil, err
-	}
+func (store *Store) GetAddress(ctx *fasthttp.RequestCtx, id int) (*domain.Address, error) {
+	sql := `select * from address where id = @id`
+	args := pgx.NamedArgs{"id": id}
 
-	res, err := pgx.CollectExactlyOneRow(
-		rows, pgx.RowToAddrOfStructByName[domain.Address],
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
+	return shared.GetOneRow[domain.Address](ctx, store.db, sql, args)
 }
 
-func (store *OrderStore) Update(ctx *fasthttp.RequestCtx, m domain.OrderInput, id int) (*domain.OrderShort, error) {
-	rows, err := store.db.Query(
-		ctx,
-		`UPDATE orders SET 
+func (store *Store) Update(ctx *fasthttp.RequestCtx, m domain.OrderInput, id int) (*domain.OrderShort, error) {
+	sql := `UPDATE orders SET 
 			address_id = @address_id,
 			payment = @payment
              WHERE id = @id 
-             returning  id,address_id,payment, created_at, updated_at`,
-		pgx.NamedArgs{
-			"id":         id,
-			"address_id": m.AddressID,
-			"payment":    m.Payment,
-		},
-	)
-	if err != nil {
-		return nil, err
+             returning  id,address_id,payment, created_at, updated_at`
+	args := pgx.NamedArgs{
+		"id":         id,
+		"address_id": m.AddressID,
+		"payment":    m.Payment,
 	}
 
-	res, err := pgx.CollectExactlyOneRow(
-		rows, pgx.RowToAddrOfStructByName[domain.OrderShort],
-	)
+	res, err := shared.GetOneRow[domain.OrderShort](ctx, store.db, sql, args)
 	if err != nil {
 		return nil, err
 	}
@@ -159,34 +121,19 @@ func (store *OrderStore) Update(ctx *fasthttp.RequestCtx, m domain.OrderInput, i
 	return res, nil
 }
 
-func (store *OrderStore) Delete(ctx *fasthttp.RequestCtx, id int) (*int, error) {
-	rows, err := store.db.Query(
-		ctx,
-		`delete from orders where id = @id 
-        returning id`,
-		pgx.NamedArgs{
-			"id": id,
-		},
-	)
+func (store *Store) Delete(ctx *fasthttp.RequestCtx, id int) (*int, error) {
+	sql := `delete from orders where id = @id returning id`
+	args := pgx.NamedArgs{"id": id}
+
+	one, err := shared.GetOneRow[idRes](ctx, store.db, sql, args)
 	if err != nil {
 		return nil, err
 	}
 
-	type idRes struct {
-		ID int `db:"id"`
-	}
-
-	res, err := pgx.CollectExactlyOneRow(
-		rows, pgx.RowToAddrOfStructByName[idRes],
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return &res.ID, nil
+	return &one.ID, nil
 }
 
-func (store *OrderStore) BulkDeleteProducts(ctx *fasthttp.RequestCtx, orderID int, products []int) error {
+func (store *Store) BulkDeleteProducts(ctx *fasthttp.RequestCtx, orderID int, products []int) error {
 	createParams := pgx.NamedArgs{
 		"order_id": orderID,
 	}
@@ -213,7 +160,7 @@ func (store *OrderStore) BulkDeleteProducts(ctx *fasthttp.RequestCtx, orderID in
 	return nil
 }
 
-func (store *OrderStore) BulkInsertProducts(ctx *fasthttp.RequestCtx, orderID int, products []domain.ProductIdQty) error {
+func (store *Store) BulkInsertProducts(ctx *fasthttp.RequestCtx, orderID int, products []domain.ProductIdQty) error {
 	createParams := pgx.NamedArgs{
 		"order_id": orderID,
 	}
@@ -244,7 +191,7 @@ func (store *OrderStore) BulkInsertProducts(ctx *fasthttp.RequestCtx, orderID in
 	return nil
 }
 
-func (store *OrderStore) BulkUpdateProducts(ctx *fasthttp.RequestCtx, orderID int, products []domain.ProductIdQty) error {
+func (store *Store) BulkUpdateProducts(ctx *fasthttp.RequestCtx, orderID int, products []domain.ProductIdQty) error {
 	rows, err := store.db.Query(
 		ctx, `select order_id,product_id,product_qty from order_product
     where order_id = @order_id`, pgx.NamedArgs{"order_id": orderID},
@@ -254,7 +201,7 @@ func (store *OrderStore) BulkUpdateProducts(ctx *fasthttp.RequestCtx, orderID in
 	}
 
 	orderProductDB, err := pgx.CollectRows(
-		rows, pgx.RowToStructByName[domain.OrderProductDB],
+		rows, pgx.RowToStructByName[OrderProductDB],
 	)
 	if err != nil {
 		return err
@@ -290,10 +237,10 @@ func (store *OrderStore) BulkUpdateProducts(ctx *fasthttp.RequestCtx, orderID in
 			return nil
 		}
 	}
-	// add or delete and
+	// add or delete end
 
 	// change qty on products
-	var filteredOrderProduct = lo.Filter(orderProductDB, func(item domain.OrderProductDB, index int) bool {
+	var filteredOrderProduct = lo.Filter(orderProductDB, func(item OrderProductDB, index int) bool {
 		return !lo.Contains(productsIdsToDelete, item.ProductID)
 	})
 
@@ -324,7 +271,7 @@ func (store *OrderStore) BulkUpdateProducts(ctx *fasthttp.RequestCtx, orderID in
 	return nil
 }
 
-func (store *OrderStore) GetProductsForOrder(ctx *fasthttp.RequestCtx, id int) ([]*domain.ProductWithQty, error) {
+func (store *Store) GetProductsForOrder(ctx *fasthttp.RequestCtx, id int) ([]*domain.ProductWithQty, error) {
 	rows, err := store.db.Query(
 		ctx, `
 		select * from order_product  where order_id = @order_id;
@@ -335,7 +282,7 @@ func (store *OrderStore) GetProductsForOrder(ctx *fasthttp.RequestCtx, id int) (
 	}
 
 	orderProductDB, err := pgx.CollectRows(
-		rows, pgx.RowToStructByName[domain.OrderProductDB],
+		rows, pgx.RowToStructByName[OrderProductDB],
 	)
 	if err != nil {
 		return nil, err

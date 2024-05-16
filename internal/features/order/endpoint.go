@@ -13,12 +13,24 @@ func (h *orderService) Create(c *fiber.Ctx) error {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))
 	}
 
-	one, err := h.repository.Create(c.Context(), input)
+	orderDB, err := h.repository.Create(c.Context(), input)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
 	}
 
-	return c.Status(http.StatusCreated).JSON(shared.SuccessRes(one))
+	address, err := h.repository.GetAddress(c.Context(), orderDB.AddressID)
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
+	}
+
+	products, err := h.repository.GetProductsForOrder(c.Context(), orderDB.ID)
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
+	}
+
+	response := domain.OrderDbToOrder(orderDB, address, products)
+
+	return c.Status(http.StatusOK).JSON(shared.SuccessRes(response))
 }
 
 func (h *orderService) GetMany(c *fiber.Ctx) error {
@@ -67,12 +79,24 @@ func (h *orderService) Update(c *fiber.Ctx) error {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))
 	}
 
-	one, err := h.repository.Update(c.Context(), input, inputID)
+	orderDB, err := h.repository.Update(c.Context(), input, inputID)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
 	}
 
-	return c.Status(http.StatusCreated).JSON(shared.SuccessRes(one))
+	address, err := h.repository.GetAddress(c.Context(), orderDB.AddressID)
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
+	}
+
+	products, err := h.repository.GetProductsForOrder(c.Context(), orderDB.ID)
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
+	}
+
+	response := domain.OrderDbToOrder(orderDB, address, products)
+
+	return c.Status(http.StatusOK).JSON(shared.SuccessRes(response))
 }
 
 func (h *orderService) Delete(c *fiber.Ctx) error {

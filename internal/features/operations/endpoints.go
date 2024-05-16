@@ -15,6 +15,9 @@ func (h *operationsService) GetAssemblyInfo(c *fiber.Ctx) error {
 	if ids == nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes("can't get id's from originalURL"))
 	}
+	if len(*ids) == 0 {
+		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes("you have to provide array of orders to get info"))
+	}
 
 	many, err := h.repository.GetAssemblyInfoByOrders(c.Context(), *ids)
 	if err != nil {
