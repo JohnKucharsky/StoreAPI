@@ -1,5 +1,5 @@
 dev:
-	cd ./cmd; fresh
+	cd ./cmd; air
 dev-db:
 	docker compose -f compose-dev.yaml up -d
 prod:

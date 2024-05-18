@@ -9,7 +9,7 @@ create table address(
         additional_info varchar,
         created_at timestamp not null default now(),
         updated_at timestamp not null default now(),
-        unique(city,street,house)
+        unique(city,street,house,floor,entrance)
 );
 
 -- +goose Down

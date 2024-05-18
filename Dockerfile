@@ -30,8 +30,8 @@ ARG TARGETARCH
 # Leverage a bind mount to the current directory to avoid having to copy the
 # source code into the container.
 RUN --mount=type=cache,target=/go/pkg/mod/ \
-    --mount=type=bind,target=. \
-    CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o /bin/server .
+    --mount=type=bind,target=./ \
+    CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o /bin/server/server ./cmd
 
 ################################################################################
 # Create a new stage for running the application that contains the minimal
@@ -68,14 +68,14 @@ RUN adduser \
 USER appuser
 
 # Copy the executable from the "build" stage.
-COPY --from=build /bin/server /bin/
+COPY --from=build /bin/server /bin/server
 
 # Copy api
 COPY  /api /bin/api
-WORKDIR /bin
+WORKDIR /bin/server
 
 # Expose the port that the application listens on.
 EXPOSE 8080
 
 # What the container should run when it is started.
-ENTRYPOINT [ "/bin/server" ]
+ENTRYPOINT [ "/bin/server/server" ]

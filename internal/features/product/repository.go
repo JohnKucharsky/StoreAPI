@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/valyala/fasthttp"
+	"time"
 )
 
 type (
@@ -19,10 +20,6 @@ type (
 
 	Store struct {
 		db *pgxpool.Pool
-	}
-
-	idRes struct {
-		ID int `db:"id"`
 	}
 )
 
@@ -69,7 +66,8 @@ func (store *Store) Update(ctx *fasthttp.RequestCtx, m domain.ProductInput, id i
 			serial = @serial,
 			price = @price,
 			model = @model,
-			picture_url = @picture_url
+			picture_url = @picture_url,
+			updated_at = @updated_at
              WHERE id = @id 
              returning  id, name, serial, price, model, picture_url, created_at, updated_at`
 	args := pgx.NamedArgs{
@@ -79,6 +77,7 @@ func (store *Store) Update(ctx *fasthttp.RequestCtx, m domain.ProductInput, id i
 		"price":       m.Price,
 		"model":       m.Model,
 		"picture_url": m.PictureURL,
+		"updated_at":  time.Now(),
 	}
 
 	return shared.GetOneRow[domain.Product](ctx, store.db, sql, args)
@@ -90,10 +89,10 @@ func (store *Store) Delete(ctx *fasthttp.RequestCtx, id int) (*int, error) {
 		"id": id,
 	}
 
-	res, err := shared.GetOneRow[idRes](ctx, store.db, sql, args)
+	one, err := shared.GetOneRow[domain.IdRes](ctx, store.db, sql, args)
 	if err != nil {
 		return nil, err
 	}
 
-	return &res.ID, nil
+	return &one.ID, nil
 }

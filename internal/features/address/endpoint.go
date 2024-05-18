@@ -7,7 +7,25 @@ import (
 	"net/http"
 )
 
-func (h *addressService) Create(c *fiber.Ctx) error {
+type (
+	Service interface {
+		Create(ctx *fiber.Ctx) error
+		Get(ctx *fiber.Ctx) error
+		GetOne(ctx *fiber.Ctx) error
+		Update(ctx *fiber.Ctx) error
+		Delete(ctx *fiber.Ctx) error
+	}
+
+	service struct {
+		repository StoreI
+	}
+)
+
+func New(store *Store) Service {
+	return &service{repository: store}
+}
+
+func (h *service) Create(c *fiber.Ctx) error {
 	var input domain.AddressInput
 	if err := shared.BindBody(c, &input); err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))
@@ -21,7 +39,7 @@ func (h *addressService) Create(c *fiber.Ctx) error {
 	return c.Status(http.StatusCreated).JSON(shared.SuccessRes(createdEntity))
 }
 
-func (h *addressService) Get(c *fiber.Ctx) error {
+func (h *service) Get(c *fiber.Ctx) error {
 	address, err := h.repository.GetMany(c.Context())
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
@@ -30,7 +48,7 @@ func (h *addressService) Get(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(shared.SuccessRes(address))
 }
 
-func (h *addressService) GetOne(c *fiber.Ctx) error {
+func (h *service) GetOne(c *fiber.Ctx) error {
 	id, err := shared.GetID(c)
 	if err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))
@@ -44,7 +62,7 @@ func (h *addressService) GetOne(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(shared.SuccessRes(address))
 }
 
-func (h *addressService) Update(c *fiber.Ctx) error {
+func (h *service) Update(c *fiber.Ctx) error {
 	id, err := shared.GetID(c)
 	if err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))
@@ -63,7 +81,7 @@ func (h *addressService) Update(c *fiber.Ctx) error {
 	return c.Status(http.StatusCreated).JSON(shared.SuccessRes(updatedEntity))
 }
 
-func (h *addressService) Delete(c *fiber.Ctx) error {
+func (h *service) Delete(c *fiber.Ctx) error {
 	id, err := shared.GetID(c)
 	if err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))

@@ -2,40 +2,149 @@ package operations
 
 import (
 	"errors"
+	"fmt"
 	"github.com/JohnKucharsky/StoreAPI/internal/domain"
 	"github.com/JohnKucharsky/StoreAPI/internal/shared"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/valyala/fasthttp"
 )
 
 type (
 	StoreI interface {
-		GetAssemblyInfoByOrders(ctx *fasthttp.RequestCtx, m []int) ([]domain.AssemblyInfo, error)
+		GetAssemblyInfoByOrders(ctx *fasthttp.RequestCtx, orders []int) ([]domain.AssemblyInfo, error)
+		PlaceProductsOnShelf(ctx *fasthttp.RequestCtx, input domain.PlaceRemoveProductInput) ([]*domain.ProductWithQty, error)
+		RemoveProductsFromShelf(ctx *fasthttp.RequestCtx, input domain.PlaceRemoveProductInput) ([]*domain.ProductWithQty, error)
 	}
 
 	Store struct {
 		db *pgxpool.Pool
 	}
-
-	ProductShort struct {
-		ID   int    `db:"id"`
-		Name string `db:"name"`
-	}
-
-	ShelfProductDB struct {
-		ShelfID    int `db:"shelf_id"`
-		ProductID  int `db:"product_id"`
-		ProductQty int `db:"product_qty"`
-	}
-
-	OrderProductDB struct {
-		ProductID   int    `db:"product_id"`
-		ProductName string `db:"product_name"`
-		ProductQty  int    `db:"product_qty"`
-		Serial      string `db:"serial"`
-		OrderID     int    `db:"order_id"`
-	}
 )
+
+func (store *Store) PlaceProductsOnShelf(ctx *fasthttp.RequestCtx, input domain.PlaceRemoveProductInput) ([]*domain.ProductWithQty, error) {
+	sqlShelfProduct := `select shelf_id, product_id, product_qty from shelf_product where shelf_id = @shelf_id`
+	argsShelfProduct := pgx.NamedArgs{"shelf_id": input.ShelfID}
+	shelfProduct, err := shared.GetManyRows[domain.ShelfProductDB](ctx, store.db, sqlShelfProduct, argsShelfProduct)
+	if err != nil {
+		return nil, err
+	}
+
+	var shelfProductIds []int
+	shelfProductMap := make(map[int]domain.ShelfProductDB)
+	for _, item := range shelfProduct {
+		shelfProductMap[item.ProductID] = *item
+		shelfProductIds = append(shelfProductIds, item.ProductID)
+	}
+	var productIds []int
+	productsMap := make(map[int]domain.ProductIdQty)
+	for _, item := range input.ProductsWithQty {
+		productsMap[item.ProductID] = item
+		productIds = append(productIds, item.ProductID)
+	}
+	productsToAdd := shared.DifferenceLeft(productIds, shelfProductIds)
+	productsToAddQty := shared.IntersectUniq(shelfProductIds, productIds)
+
+	for _, item := range productsToAdd {
+		productToAdd := productsMap[item]
+		sql := `insert into shelf_product (product_id, product_qty, shelf_id) values (@product_id, @product_qty, @shelf_id)`
+		args := pgx.NamedArgs{"product_id": productToAdd.ProductID,
+			"product_qty": productToAdd.Quantity,
+			"shelf_id":    input.ShelfID}
+		_, err := store.db.Exec(ctx, sql, args)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	for _, item := range productsToAddQty {
+		productToAddInput := productsMap[item]
+		productToAddDb := shelfProductMap[item]
+
+		sql := `update shelf_product SET 
+			product_qty = @product_qty
+             WHERE shelf_id = @shelf_id and product_id = @product_id`
+		args := pgx.NamedArgs{
+			"product_qty": productToAddInput.Quantity + productToAddDb.ProductQty,
+			"shelf_id":    input.ShelfID,
+			"product_id":  item}
+		fmt.Println("exec")
+		_, err := store.db.Exec(ctx, sql, args)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	sqlProduct := `select product.*, shelf_product.product_qty from shelf_product left join product on
+    product.id=shelf_product.product_id where shelf_product.shelf_id = @id`
+	argsProduct := pgx.NamedArgs{"id": input.ShelfID}
+	productWithQty, err := shared.GetManyRows[domain.ProductWithQty](ctx, store.db, sqlProduct, argsProduct)
+	if err != nil {
+		return nil, err
+	}
+
+	return productWithQty, nil
+}
+
+func (store *Store) RemoveProductsFromShelf(ctx *fasthttp.RequestCtx, input domain.PlaceRemoveProductInput) ([]*domain.ProductWithQty, error) {
+	sqlShelfProduct := `select shelf_id, product_id, product_qty from shelf_product where shelf_id = @shelf_id`
+	argsShelfProduct := pgx.NamedArgs{"shelf_id": input.ShelfID}
+	shelfProduct, err := shared.GetManyRows[domain.ShelfProductDB](ctx, store.db, sqlShelfProduct, argsShelfProduct)
+	if err != nil {
+		return nil, err
+	}
+
+	var shelfProductIds []int
+	shelfProductMap := make(map[int]domain.ShelfProductDB)
+	for _, item := range shelfProduct {
+		shelfProductMap[item.ProductID] = *item
+		shelfProductIds = append(shelfProductIds, item.ProductID)
+	}
+	var productIds []int
+	productsMap := make(map[int]domain.ProductIdQty)
+	for _, item := range input.ProductsWithQty {
+		productsMap[item.ProductID] = item
+		productIds = append(productIds, item.ProductID)
+	}
+
+	intersect := shared.IntersectUniq(productIds, shelfProductIds)
+
+	for _, item := range intersect {
+		inputProduct := productsMap[item]
+		shlfProduct := shelfProductMap[item]
+		if shlfProduct.ProductQty-inputProduct.Quantity > 0 {
+			sql := `update shelf_product SET 
+			product_qty = @product_qty
+             WHERE shelf_id = @shelf_id and product_id = @product_id`
+			args := pgx.NamedArgs{"product_id": inputProduct.ProductID,
+				"product_qty": shlfProduct.ProductQty - inputProduct.Quantity,
+				"shelf_id":    input.ShelfID}
+
+			_, err := store.db.Exec(ctx, sql, args)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			sql := `delete from shelf_product where shelf_id = @shelf_id and product_id = @product_id`
+			args := pgx.NamedArgs{"shelf_id": input.ShelfID, "product_id": item}
+
+			_, err := store.db.Exec(ctx, sql, args)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	sqlProduct := `select product.*, shelf_product.product_qty from shelf_product left join product on
+    product.id=shelf_product.product_id where shelf_product.shelf_id = @id`
+	argsProduct := pgx.NamedArgs{"id": input.ShelfID}
+	productWithQty, err := shared.GetManyRows[domain.ProductWithQty](ctx, store.db, sqlProduct, argsProduct)
+	if err != nil {
+		return nil, err
+	}
+
+	return productWithQty, nil
+}
 
 func NewOperationsStore(db *pgxpool.Pool) *Store {
 	return &Store{
@@ -43,48 +152,43 @@ func NewOperationsStore(db *pgxpool.Pool) *Store {
 	}
 }
 
-func (store *Store) GetAssemblyInfoByOrders(ctx *fasthttp.RequestCtx, m []int) (
+func (store *Store) GetAssemblyInfoByOrders(ctx *fasthttp.RequestCtx, orders []int) (
 	[]domain.AssemblyInfo,
 	error,
 ) {
 	sqlOrderProduct := `select id as product_id, name as product_name, serial, order_id, product_qty 
 	from product left join order_product on product.id = order_product.product_id 
 	where order_product.order_id = any ($1)`
-	orderProduct, err := shared.GetManyRowsInIds[OrderProductDB](ctx, store.db, sqlOrderProduct, m)
+	orderProduct, err := shared.GetManyRowsInIds[domain.OrderProductDB](ctx, store.db, sqlOrderProduct, orders)
 	if err != nil {
 		return nil, err
 	}
 
 	var productIdsToGetShelves []int
+	productMap := make(map[int]*domain.OrderProductDB)
 	for _, item := range orderProduct {
+		productMap[item.ProductID] = item
 		productIdsToGetShelves = append(productIdsToGetShelves, item.ProductID)
 	}
 	if len(productIdsToGetShelves) == 0 {
 		return nil, errors.New("can't get shelves, put products on shelves")
 	}
 	sqlShelfProduct := `select shelf_id, product_id, product_qty from shelf_product where product_id = any ($1)`
-	shelfProduct, err := shared.GetManyRowsInIds[ShelfProductDB](ctx, store.db, sqlShelfProduct, productIdsToGetShelves)
+	shelfProduct, err := shared.GetManyRowsInIds[domain.ShelfProductDB](ctx, store.db, sqlShelfProduct, productIdsToGetShelves)
 	if err != nil {
 		return nil, err
 	}
 
 	var shelvesIds []int
+	productShelfMap := make(map[int]*domain.ShelfProductDB)
 	for _, shlf := range shelfProduct {
 		shelvesIds = append(shelvesIds, shlf.ShelfID)
+		productShelfMap[shlf.ProductID] = shlf
 	}
 	sqlShelves := `select * from shelf where id = any ($1)`
 	shelves, err := shared.GetManyRowsInIds[domain.Shelf](ctx, store.db, sqlShelves, productIdsToGetShelves)
 	if err != nil {
 		return nil, err
-	}
-
-	productShelfMap := make(map[int]*ShelfProductDB)
-	for _, shelfP := range shelfProduct {
-		productShelfMap[shelfP.ProductID] = shelfP
-	}
-	productMap := make(map[int]*OrderProductDB)
-	for _, product := range orderProduct {
-		productMap[product.ProductID] = product
 	}
 
 	var assemblyInfo []domain.AssemblyInfo

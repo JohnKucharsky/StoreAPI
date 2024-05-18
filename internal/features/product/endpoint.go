@@ -7,21 +7,39 @@ import (
 	"net/http"
 )
 
-func (h *productService) Create(c *fiber.Ctx) error {
+type (
+	Service interface {
+		Create(ctx *fiber.Ctx) error
+		GetMany(ctx *fiber.Ctx) error
+		GetOne(ctx *fiber.Ctx) error
+		Update(ctx *fiber.Ctx) error
+		Delete(ctx *fiber.Ctx) error
+	}
+
+	service struct {
+		repository StoreI
+	}
+)
+
+func New(store *Store) Service {
+	return &service{repository: store}
+}
+
+func (h *service) Create(c *fiber.Ctx) error {
 	var input domain.ProductInput
 	if err := shared.BindBody(c, &input); err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))
 	}
 
-	product, err := h.repository.Create(c.Context(), input)
+	one, err := h.repository.Create(c.Context(), input)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
 	}
 
-	return c.Status(http.StatusCreated).JSON(shared.SuccessRes(product))
+	return c.Status(http.StatusCreated).JSON(shared.SuccessRes(one))
 }
 
-func (h *productService) GetMany(c *fiber.Ctx) error {
+func (h *service) GetMany(c *fiber.Ctx) error {
 	many, err := h.repository.GetMany(c.Context())
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
@@ -30,7 +48,7 @@ func (h *productService) GetMany(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(shared.SuccessRes(many))
 }
 
-func (h *productService) GetOne(c *fiber.Ctx) error {
+func (h *service) GetOne(c *fiber.Ctx) error {
 	inputID, err := shared.GetID(c)
 	if err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))
@@ -44,7 +62,7 @@ func (h *productService) GetOne(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(shared.SuccessRes(one))
 }
 
-func (h *productService) Update(c *fiber.Ctx) error {
+func (h *service) Update(c *fiber.Ctx) error {
 	inputID, err := shared.GetID(c)
 	if err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))
@@ -55,15 +73,15 @@ func (h *productService) Update(c *fiber.Ctx) error {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))
 	}
 
-	product, err := h.repository.Update(c.Context(), input, inputID)
+	one, err := h.repository.Update(c.Context(), input, inputID)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
 	}
 
-	return c.Status(http.StatusCreated).JSON(shared.SuccessRes(product))
+	return c.Status(http.StatusCreated).JSON(shared.SuccessRes(one))
 }
 
-func (h *productService) Delete(c *fiber.Ctx) error {
+func (h *service) Delete(c *fiber.Ctx) error {
 	inputID, err := shared.GetID(c)
 	if err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))

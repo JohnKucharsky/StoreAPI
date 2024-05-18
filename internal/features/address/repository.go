@@ -21,10 +21,6 @@ type (
 	Store struct {
 		db *pgxpool.Pool
 	}
-
-	idRes struct {
-		ID int `db:"id"`
-	}
 )
 
 func NewAddressStore(db *pgxpool.Pool) *Store {
@@ -96,7 +92,7 @@ func (store *Store) Delete(ctx *fasthttp.RequestCtx, id int) (*int, error) {
         returning id`
 	args := pgx.NamedArgs{"id": id}
 
-	one, err := shared.GetOneRow[idRes](ctx, store.db, sql, args)
+	one, err := shared.GetOneRow[domain.IdRes](ctx, store.db, sql, args)
 	if err != nil {
 		return nil, err
 	}

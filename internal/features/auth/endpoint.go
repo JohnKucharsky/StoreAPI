@@ -11,7 +11,26 @@ import (
 	"time"
 )
 
-func (h *authService) SignUp(c *fiber.Ctx) error {
+type (
+	Service interface {
+		SignUp(ctx *fiber.Ctx) error
+		SignIn(ctx *fiber.Ctx) error
+		RefreshAccessToken(ctx *fiber.Ctx) error
+		DeserializeUser(ctx *fiber.Ctx) error
+		GetMe(ctx *fiber.Ctx) error
+		LogoutUser(ctx *fiber.Ctx) error
+	}
+
+	service struct {
+		repository StoreI
+	}
+)
+
+func New(store *Store) Service {
+	return &service{repository: store}
+}
+
+func (h *service) SignUp(c *fiber.Ctx) error {
 	var input domain.SignUpInput
 	if err := shared.BindBody(c, &input); err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))
@@ -30,7 +49,7 @@ func (h *authService) SignUp(c *fiber.Ctx) error {
 	return c.Status(http.StatusCreated).JSON(shared.SuccessRes(res))
 }
 
-func (h *authService) SignIn(c *fiber.Ctx) error {
+func (h *service) SignIn(c *fiber.Ctx) error {
 	var input domain.SignInInput
 	if err := shared.BindBody(c, &input); err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))
@@ -105,7 +124,7 @@ func (h *authService) SignIn(c *fiber.Ctx) error {
 	)
 }
 
-func (h *authService) RefreshAccessToken(c *fiber.Ctx) error {
+func (h *service) RefreshAccessToken(c *fiber.Ctx) error {
 	refreshToken := c.Cookies("refresh_token")
 	if refreshToken == "" {
 		return c.Status(http.StatusBadRequest).JSON(
@@ -160,7 +179,7 @@ func (h *authService) RefreshAccessToken(c *fiber.Ctx) error {
 	)
 }
 
-func (h *authService) DeserializeUser(c *fiber.Ctx) error {
+func (h *service) DeserializeUser(c *fiber.Ctx) error {
 	var accessToken string
 	authorization := c.Get("Authorization")
 
@@ -192,13 +211,13 @@ func (h *authService) DeserializeUser(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-func (h *authService) GetMe(c *fiber.Ctx) error {
+func (h *service) GetMe(c *fiber.Ctx) error {
 	user := c.Locals("user").(*domain.User)
 
 	return c.Status(http.StatusOK).JSON(shared.SuccessRes(user))
 }
 
-func (h *authService) LogoutUser(c *fiber.Ctx) error {
+func (h *service) LogoutUser(c *fiber.Ctx) error {
 	refreshToken := c.Cookies("refresh_token")
 	if refreshToken == "" {
 		return c.Status(http.StatusUnauthorized).JSON(shared.ErrorRes("No refresh token in the cookies"))
