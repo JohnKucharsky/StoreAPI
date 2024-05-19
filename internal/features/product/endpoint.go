@@ -4,6 +4,7 @@ import (
 	"github.com/JohnKucharsky/StoreAPI/internal/domain"
 	"github.com/JohnKucharsky/StoreAPI/internal/shared"
 	"github.com/gofiber/fiber/v2"
+	"github.com/samber/lo"
 	"net/http"
 )
 
@@ -40,7 +41,21 @@ func (h *service) Create(c *fiber.Ctx) error {
 }
 
 func (h *service) GetMany(c *fiber.Ctx) error {
-	many, err := h.repository.GetMany(c.Context())
+	pp, err := shared.GetPaginationParams(c)
+	if err != nil {
+		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))
+	}
+
+	var orderBy = c.Query("order_by")
+	if orderBy != "" && !lo.Contains([]string{"name", "serial", "updated_at"}, orderBy) {
+		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes("wrong term for order_by"))
+	}
+	var sortOrder = c.Query("sort_order")
+	if sortOrder != "" && !lo.Contains([]string{"asc", "desc"}, sortOrder) {
+		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes("wrong term for sort_order"))
+	}
+
+	many, err := h.repository.GetMany(c.Context(), pp, shared.GetOrderString(orderBy, sortOrder))
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
 	}

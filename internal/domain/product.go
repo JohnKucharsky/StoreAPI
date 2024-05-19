@@ -36,4 +36,9 @@ type (
 		ID   int    `db:"id"`
 		Name string `db:"name"`
 	}
+
+	ProductOrder struct {
+		OrderBy   string `json:"order_by"`
+		SortOrder string `json:"sort_order"`
+	}
 )

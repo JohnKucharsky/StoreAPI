@@ -1,6 +1,7 @@
 package product
 
 import (
+	"fmt"
 	"github.com/JohnKucharsky/StoreAPI/internal/domain"
 	"github.com/JohnKucharsky/StoreAPI/internal/shared"
 	"github.com/jackc/pgx/v5"
@@ -12,7 +13,7 @@ import (
 type (
 	StoreI interface {
 		Create(ctx *fasthttp.RequestCtx, m domain.ProductInput) (*domain.Product, error)
-		GetMany(ctx *fasthttp.RequestCtx) ([]*domain.Product, error)
+		GetMany(ctx *fasthttp.RequestCtx, params *shared.ParsedPaginationParams, orderString string) ([]*domain.Product, error)
 		GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.Product, error)
 		Update(ctx *fasthttp.RequestCtx, m domain.ProductInput, id int) (*domain.Product, error)
 		Delete(ctx *fasthttp.RequestCtx, id int) (*int, error)
@@ -47,10 +48,11 @@ func (store *Store) Create(ctx *fasthttp.RequestCtx, m domain.ProductInput) (
 	return shared.GetOneRow[domain.Product](ctx, store.db, sql, args)
 }
 
-func (store *Store) GetMany(ctx *fasthttp.RequestCtx) ([]*domain.Product, error) {
-	sql := `select * from product`
+func (store *Store) GetMany(ctx *fasthttp.RequestCtx, pp *shared.ParsedPaginationParams, orderString string) ([]*domain.Product, error) {
+	sql := fmt.Sprintf(`select * from product %s limit @limit offset @offset`, orderString)
+	args := pgx.NamedArgs{"limit": pp.Limit, "offset": pp.Offset}
 
-	return shared.GetManyRows[domain.Product](ctx, store.db, sql, pgx.NamedArgs{})
+	return shared.GetManyRows[domain.Product](ctx, store.db, sql, args)
 }
 
 func (store *Store) GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.Product, error) {
