@@ -7,11 +7,11 @@ type (
 		SerialNumber  string `json:"serial"`
 		OrderID       int    `json:"order_id"`
 		QuantityShelf int    `json:"quantity_shelf"`
-		QuantityOrder int    `json:"quantity_order"`
+		QuantityOrder int    `json:"order_quantity"`
 	}
 
 	AssemblyInfo struct {
-		Name     string            `json:"name"`
+		Name     string            `json:"shelf_name"`
 		Products []AssemblyProduct `json:"products"`
 	}
 

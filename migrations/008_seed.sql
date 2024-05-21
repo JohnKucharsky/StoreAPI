@@ -10,8 +10,8 @@ insert into shelf (name)
 values ('FirstShelf'), ('SecondShelf'), ('ThirdShelf');
 
 insert into product (name, serial, price, model, picture_url) values
- ('Phone', '34ko34j', 250, 'iPhone', 'https://picture.234kjh.com'),
- ('Notebook', 'sudo34j', 850, 'Honor', 'https://picture.4kjh.com'),
+ ('Phone', '34ko34j', 250, 'iPhone', 'https://unsplash.com/photos/gold-iphone-6-sweUF7FcyP4'),
+ ('Notebook', 'sudo34j', 850, 'Honor', 'https://unsplash.com/photos/black-and-silver-retractable-pen-on-blank-book-3ym6i13Y9LU'),
  ('Tab', '32444j', 450, 'Samsung', 'https://picture.2sjh.com'),
  ('Vacuum', '42ssg', 650, null, 'https://picture.23rh.com'),
  ('Watch', '34csso34j', 1600, 'Rolex', 'https://picture.2dkjh.com');

@@ -13,8 +13,7 @@ type (
 	}
 
 	ShelfInput struct {
-		Name        string `json:"name" validate:"required"`
-		Destination string `json:"destination" validate:"required"`
+		Name string `json:"name" validate:"required"`
 	}
 
 	ShelfProductDB struct {

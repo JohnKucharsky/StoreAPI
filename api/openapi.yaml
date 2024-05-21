@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: News API with auth
-  description: DevGroup test
+  title: Warehouse API
+  description: Warehouse API with auth
   version: 1.0.0
 servers:
   - url: http://localhost:8080/api
@@ -101,6 +101,16 @@ paths:
           $ref: '#/components/responses/GenericError'
 components:
   parameters:
+    idsArrParam:
+      in: query
+      name: id
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+        default: 0
+        example: 10
+      description: Array of ids
     offsetParam:
       in: query
       name: offset
@@ -140,28 +150,25 @@ components:
       description: |
         Prefix the value with "Authorization" to indicate the custom authorization type
   responses:
-    ManyNews:
-      description: Actors array
+    ManyProducts:
+      description: Products array
       content:
         application/json:
           schema:
             type: object
             properties:
-              success:
-                type: boolean
-                example: true
               data:
                 type: array
                 items:
-                  $ref: '#/components/schemas/News'
+                  $ref: '#/components/schemas/Product'
               pagination:
                 $ref: '#/components/schemas/Pagination'
-    OneNews:
-      description: One news
+    OneProduct:
+      description: One product
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/News'
+            $ref: '#/components/schemas/Product'
     User:
       description: User
       content:
@@ -238,20 +245,34 @@ components:
           schema:
             type: string
   requestBodies:
-    CreateNewsInput:
+    CreateOrderInput:
       required: true
-      description: Create news
+      description: Create order
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/CreateNewsInput'
-    UpdateNewsInput:
+            $ref: '#/components/schemas/OrderInput'
+    CreateAddressInput:
       required: true
-      description: Update news
+      description: Create address
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UpdateNewsInput'
+            $ref: '#/components/schemas/AddressInput'
+    CreateShelfInput:
+      required: true
+      description: Create shelf
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ShelfInput'
+    CreateProductInput:
+      required: true
+      description: Create product
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProductInput'
     SignUpInput:
       required: true
       description: Register a user
@@ -283,63 +304,277 @@ components:
         offset:
           type: integer
           example: 0
-    News:
+    Product:
       required:
         - id
-        - title
-        - content
+        - name
+        - serial
+        - price
+        - model
+        - picture_url
+        - created_at
         - updated_at
       type: object
       properties:
         id:
           type: integer
           example: 1
-        title:
+        name:
           type: string
-          example: New Toyota Avalon
-        content:
+          example: Phone
+        serial:
           type: string
-          example:  Toyota Avalon starts at $37,920 and goes up to $45,245 depending on the trim and options
-        categories:
-          type: array
-          items:
-            type: integer
-          example: [1, 2, 3]
+          example:  34ko34j
+        price:
+          type: integer
+          example: 250
+        model:
+          type: string
+          nullable: true
+          example: iPhone
+        created_at:
+          type: string
+          format: date-time
+          example: 01.02.2024
         updated_at:
           type: string
           format: date-time
           example: 01.02.2024
-    CreateNewsInput:
+    AssemblyProduct:
       required:
-        - title
-        - content
+        - product_id
+        - product_name
+        - serial
+        - order_id
+        - quantity_shelf
+        - order_quantity
       type: object
       properties:
-        title:
+        product_id:
+          type: integer
+          example: 1
+        product_name:
           type: string
-          example: Russia
-        content:
+          example: Phone
+        serial:
           type: string
-          example: Various content about Russia
-        categories:
-          type: array
-          items:
-            type: integer
-          example: [ 1, 2, 3 ]
-    UpdateNewsInput:
+          example: 34ko34j
+        order_id:
+          type: integer
+          example: 1
+        quantity_shelf:
+          type: integer
+          example: 2
+        order_quantity:
+          type: string
+          format: date-time
+          example: 01.02.2024
+    AssemblyInfo:
+      required:
+        - shelf_name
+        - products
       type: object
       properties:
-        title:
+        shelf_name:
           type: string
-          example: Russia
-        content:
-          type: string
-          example: Various content about Russia
-        categories:
+          example: ShelfOne
+        products:
           type: array
           items:
-            type: integer
-          example: [ 1, 2, 3 ]
+            $ref: '#/components/schemas/AssemblyProduct'
+    ProductInput:
+      required:
+        - name
+        - serial
+        - price
+        - picture_url
+      type: object
+      properties:
+        name:
+          type: string
+          example: Speakers
+        serial:
+          type: string
+          example: n9876bhg
+        price:
+          type: integer
+          example: 500
+        model:
+          type: string
+          nullable: true
+          example: Adam
+        picture_url:
+          type: string
+          example: https://unsplash.com/photos/a-desk-with-a-monitor-keyboard-and-speakers-S0BhaaEQBZE
+    ProductWithQty:
+      required:
+        - product
+        - quantity
+      type: object
+      properties:
+        product:
+          $ref: '#/components/schemas/Product'
+        quantity:
+          type: integer
+          example: 2
+    ProductIdQty:
+      required:
+        - product_id
+        - quantity
+      type: object
+      properties:
+        product_id:
+          type: integer
+          example: 1
+        quantity:
+          example: 3
+    Shelf:
+      required:
+        - id
+        - name
+        - created_at
+        - updated_at
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Phone
+        created_at:
+          type: string
+          format: date-time
+          example: 01.02.2024
+        updated_at:
+          type: string
+          format: date-time
+          example: 01.02.2024
+    ShelfInput:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+          example: Speakers
+    Address:
+      required:
+        - id
+        - city
+        - street
+        - house
+        - floor
+        - entrance
+        - additional_info
+        - created_at
+        - updated_at
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        city:
+          type: string
+          example: Phone
+        street:
+          type: string
+          example: Phone
+        house:
+          type: string
+          example: Phone
+        floor:
+          type: string
+          example: Phone
+        entrance:
+          type: string
+          example: Phone
+        additional_info:
+          type: string
+          example: Phone
+        created_at:
+          type: string
+          format: date-time
+          example: 01.02.2024
+        updated_at:
+          type: string
+          format: date-time
+          example: 01.02.2024
+    AddressInput:
+      required:
+        - city
+        - street
+        - house
+      type: object
+      properties:
+        name:
+          type: string
+          example: Speakers
+        city:
+          type: string
+          example: Moscow
+        street:
+          type: string
+          example: Kantemirovskaya
+        house:
+          type: string
+          example: 20
+        floor:
+          type: integer
+          example: 7
+        entrance:
+          type: integer
+          example: 2
+        additional_info:
+          type: string
+          example: Call when you arrive
+    Order:
+      required:
+        - id
+        - address
+        - payment
+        - products
+        - created_at
+        - updated_at
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        address:
+          $ref: '#/components/schemas/Address'
+        payment:
+          type: string
+          example: Cash
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductWithQty'
+        created_at:
+          type: string
+          format: date-time
+          example: 01.02.2024
+        updated_at:
+          type: string
+          format: date-time
+          example: 01.02.2024
+    OrderInput:
+      required:
+        - address_id
+        - payment
+        - products
+      type: object
+      properties:
+        address_id:
+          type: string
+          example: Speakers
+        payment:
+          type: string
+          example: Moscow
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductIdQty'
     User:
       required:
         - id

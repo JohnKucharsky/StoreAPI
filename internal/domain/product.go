@@ -15,16 +15,16 @@ type (
 	}
 
 	ProductInput struct {
-		Name       string `json:"name" validate:"required"`
-		Serial     string `json:"serial" validate:"required"`
-		Price      int    `json:"price" validate:"required"`
-		Model      *int   `json:"model"`
-		PictureURL string `json:"picture_url" validate:"required"`
+		Name       string  `json:"name" validate:"required"`
+		Serial     string  `json:"serial" validate:"required"`
+		Price      int     `json:"price" validate:"required"`
+		Model      *string `json:"model"`
+		PictureURL string  `json:"picture_url" validate:"required"`
 	}
 
 	ProductWithQty struct {
-		Product
-		Quantity int `json:"quantity" db:"product_qty"`
+		Product  Product `json:"product"`
+		Quantity int     `json:"quantity" db:"product_qty"`
 	}
 
 	ProductIdQty struct {

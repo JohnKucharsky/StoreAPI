@@ -55,12 +55,17 @@ func (h *service) GetMany(c *fiber.Ctx) error {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes("wrong term for sort_order"))
 	}
 
-	many, err := h.repository.GetMany(c.Context(), pp, shared.GetOrderString(orderBy, sortOrder))
+	many, total, err := h.repository.GetMany(c.Context(), pp, shared.GetOrderString(orderBy, sortOrder))
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
 	}
 
-	return c.Status(http.StatusOK).JSON(shared.SuccessRes(many))
+	var pagination = shared.Pagination{
+		Total:  total,
+		Limit:  pp.Limit,
+		Offset: pp.Offset,
+	}
+	return c.Status(http.StatusOK).JSON(shared.SuccessPaginatedRes(many, &pagination))
 }
 
 func (h *service) GetOne(c *fiber.Ctx) error {

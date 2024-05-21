@@ -7,9 +7,9 @@ import (
 
 type (
 	Pagination struct {
-		Total  int `json:"total"`
-		Limit  int `json:"limit"`
-		Offset int `json:"offset"`
+		Total  int32 `json:"total"`
+		Limit  int   `json:"limit"`
+		Offset int   `json:"offset"`
 	}
 
 	PaginationParams struct {

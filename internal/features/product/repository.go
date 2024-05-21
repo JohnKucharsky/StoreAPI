@@ -13,7 +13,7 @@ import (
 type (
 	StoreI interface {
 		Create(ctx *fasthttp.RequestCtx, m domain.ProductInput) (*domain.Product, error)
-		GetMany(ctx *fasthttp.RequestCtx, params *shared.ParsedPaginationParams, orderString string) ([]*domain.Product, error)
+		GetMany(ctx *fasthttp.RequestCtx, params *shared.ParsedPaginationParams, orderString string) ([]*domain.Product, int32, error)
 		GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.Product, error)
 		Update(ctx *fasthttp.RequestCtx, m domain.ProductInput, id int) (*domain.Product, error)
 		Delete(ctx *fasthttp.RequestCtx, id int) (*int, error)
@@ -48,11 +48,22 @@ func (store *Store) Create(ctx *fasthttp.RequestCtx, m domain.ProductInput) (
 	return shared.GetOneRow[domain.Product](ctx, store.db, sql, args)
 }
 
-func (store *Store) GetMany(ctx *fasthttp.RequestCtx, pp *shared.ParsedPaginationParams, orderString string) ([]*domain.Product, error) {
+func (store *Store) GetMany(ctx *fasthttp.RequestCtx, pp *shared.ParsedPaginationParams, orderString string) ([]*domain.Product, int32, error) {
 	sql := fmt.Sprintf(`select * from product %s limit @limit offset @offset`, orderString)
 	args := pgx.NamedArgs{"limit": pp.Limit, "offset": pp.Offset}
 
-	return shared.GetManyRows[domain.Product](ctx, store.db, sql, args)
+	many, err := shared.GetManyRows[domain.Product](ctx, store.db, sql, args)
+	if err != nil {
+		return nil, 0, err
+	}
+	var total int32
+
+	err = store.db.QueryRow(ctx, `select count(*) from product`).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return many, total, nil
 }
 
 func (store *Store) GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.Product, error) {
