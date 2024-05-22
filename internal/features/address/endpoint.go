@@ -31,18 +31,18 @@ func (h *service) Create(c *fiber.Ctx) error {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))
 	}
 
-	createdEntity, err := h.repository.Create(c.Context(), input)
+	one, err := h.repository.Create(c.Context(), input)
 	if err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))
 	}
 
-	return c.Status(http.StatusCreated).JSON(shared.SuccessRes(createdEntity))
+	return c.Status(http.StatusCreated).JSON(shared.SuccessRes(one))
 }
 
 func (h *service) Get(c *fiber.Ctx) error {
 	address, err := h.repository.GetMany(c.Context())
 	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
+		return c.Status(http.StatusInternalServerError).JSON(shared.ErrorRes(err.Error()))
 	}
 
 	return c.Status(http.StatusOK).JSON(shared.SuccessRes(address))
@@ -87,10 +87,10 @@ func (h *service) Delete(c *fiber.Ctx) error {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes(err.Error()))
 	}
 
-	resId, err := h.repository.Delete(c.Context(), id)
+	ID, err := h.repository.Delete(c.Context(), id)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
 	}
 
-	return c.Status(http.StatusOK).JSON(shared.SuccessRes(fiber.Map{"id": resId}))
+	return c.Status(http.StatusOK).JSON(shared.SuccessRes(fiber.Map{"id": ID}))
 }

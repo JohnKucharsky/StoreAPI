@@ -23,7 +23,7 @@ type (
 	}
 
 	ShelfInfo struct {
-		Shelf   Shelf
-		Product []ProductWithQty
+		Shelf   Shelf            `json:"shelf"`
+		Product []ProductWithQty `json:"products_with_qty"`
 	}
 )

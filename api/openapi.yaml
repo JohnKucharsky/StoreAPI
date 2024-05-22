@@ -7,6 +7,7 @@ servers:
   - url: http://localhost:8080/api
 tags:
   - name: Authorization
+  - name: Address
 paths:
   /auth/sign-up:
     post:
@@ -23,7 +24,6 @@ paths:
           $ref: '#/components/responses/GenericError'
         '422':
           $ref: '#/components/responses/GenericError'
-      x-codegen-request-body-name: body
   /auth/login:
     post:
       tags:
@@ -40,7 +40,6 @@ paths:
           $ref: '#/components/responses/GenericError'
         '422':
           $ref: '#/components/responses/GenericError'
-      x-codegen-request-body-name: body
   /auth/logout:
     get:
       tags:
@@ -99,6 +98,378 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/GenericError'
+  /address:
+    post:
+      tags:
+        - Address
+      summary: Create an address
+      security:
+        - access_token: [ ]
+        - Authorization: [ ]
+      operationId: AddressPost
+      requestBody:
+        $ref: '#/components/requestBodies/CreateAddressInput'
+      responses:
+        '201':
+          $ref: '#/components/responses/OneAddress'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+    get:
+      tags:
+        - Address
+      summary: Get all addresses
+      operationId: GetManyAddresses
+      responses:
+        '200':
+          $ref: '#/components/responses/ManyAddresses'
+        '500':
+          $ref: '#/components/responses/GenericError'
+  /address/{id}:
+    get:
+      tags:
+        - Address
+      description: Get address by id
+      operationId: GetOneAddress
+      responses:
+        '200':
+          $ref: '#/components/responses/OneAddress'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+    put:
+      tags:
+        - Address
+      security:
+        - access_token: [ ]
+        - Authorization: [ ]
+      description: Update address
+      operationId: UpdateAddress
+      requestBody:
+        $ref: '#/components/requestBodies/CreateAddressInput'
+      responses:
+        '201':
+          $ref: '#/components/responses/OneAddress'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+    delete:
+      tags:
+        - Address
+      security:
+        - access_token: [ ]
+        - Authorization: [ ]
+      description: Delete an address
+      operationId: DeleteAddress
+      responses:
+        '200':
+          $ref: '#/components/responses/IdResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+  /shelf:
+    post:
+      tags:
+        - Shelf
+      summary: Create a shelf
+      security:
+        - access_token: [ ]
+        - Authorization: [ ]
+      operationId: ShelfPost
+      requestBody:
+        $ref: '#/components/requestBodies/CreateShelfInput'
+      responses:
+        '201':
+          $ref: '#/components/responses/OneShelf'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+    get:
+      tags:
+        - Shelf
+      summary: Get all shelves
+      operationId: GetManyShelves
+      responses:
+        '200':
+          $ref: '#/components/responses/ManyShelves'
+        '500':
+          $ref: '#/components/responses/GenericError'
+  /shelf/{id}:
+    get:
+      tags:
+        - Shelf
+      description: Get shelf by id
+      operationId: GetOneShelf
+      responses:
+        '200':
+          $ref: '#/components/responses/OneShelfWithInfo'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+    put:
+      tags:
+        - Shelf
+      security:
+        - access_token: [ ]
+        - Authorization: [ ]
+      description: Update shelf
+      operationId: UpdateShelf
+      requestBody:
+        $ref: '#/components/requestBodies/CreateShelfInput'
+      responses:
+        '201':
+          $ref: '#/components/responses/OneShelf'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+    delete:
+      tags:
+        - Shelf
+      security:
+        - access_token: [ ]
+        - Authorization: [ ]
+      description: Delete a shelf
+      operationId: DeleteShelf
+      responses:
+        '200':
+          $ref: '#/components/responses/IdResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+  /product:
+    post:
+      tags:
+        - Product
+      summary: Create a product
+      security:
+        - access_token: [ ]
+        - Authorization: [ ]
+      operationId: ProductPost
+      requestBody:
+        $ref: '#/components/requestBodies/CreateProductInput'
+      responses:
+        '201':
+          $ref: '#/components/responses/OneProduct'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+    get:
+      tags:
+        - Product
+      summary: Get all products
+      operationId: GetManyProducts
+      responses:
+        '200':
+          $ref: '#/components/responses/ManyProducts'
+        '500':
+          $ref: '#/components/responses/GenericError'
+  /product/{id}:
+    get:
+      tags:
+        - Product
+      description: Get product by id
+      operationId: GetOneProduct
+      responses:
+        '200':
+          $ref: '#/components/responses/OneProduct'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+    put:
+      tags:
+        - Product
+      security:
+        - access_token: [ ]
+        - Authorization: [ ]
+      description: Update product
+      operationId: UpdateProduct
+      requestBody:
+        $ref: '#/components/requestBodies/CreateProductInput'
+      responses:
+        '201':
+          $ref: '#/components/responses/OneProduct'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+    delete:
+      tags:
+        - Product
+      security:
+        - access_token: [ ]
+        - Authorization: [ ]
+      description: Delete a product
+      operationId: DeleteProduct
+      responses:
+        '200':
+          $ref: '#/components/responses/IdResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+  /order:
+    post:
+      tags:
+        - Order
+      summary: Create an order
+      security:
+        - access_token: [ ]
+        - Authorization: [ ]
+      operationId: OrderPost
+      requestBody:
+        $ref: '#/components/requestBodies/CreateOrderInput'
+      responses:
+        '201':
+          $ref: '#/components/responses/OneOrder'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+    get:
+      tags:
+        - Order
+      summary: Get all orders
+      operationId: GetManyOrders
+      responses:
+        '200':
+          $ref: '#/components/responses/ManyOrders'
+        '500':
+          $ref: '#/components/responses/GenericError'
+  /order/{id}:
+    get:
+      tags:
+        - Order
+      description: Get order by id
+      operationId: GetOneOrder
+      responses:
+        '200':
+          $ref: '#/components/responses/OneOrder'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+    put:
+      tags:
+        - Order
+      security:
+        - access_token: [ ]
+        - Authorization: [ ]
+      description: Update order
+      operationId: UpdateOrder
+      requestBody:
+        $ref: '#/components/requestBodies/CreateOrderInput'
+      responses:
+        '201':
+          $ref: '#/components/responses/OneOrder'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+    delete:
+      tags:
+        - Order
+      security:
+        - access_token: [ ]
+        - Authorization: [ ]
+      description: Delete an order
+      operationId: DeleteOrder
+      responses:
+        '200':
+          $ref: '#/components/responses/IdResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+  /operations/assembly_info:
+    get:
+      tags:
+        - Operations
+      summary: Get assembly info
+      operationId: OperationsAssemblyInfo
+      parameters:
+        - in: query
+          name: idsArray
+          schema:
+            $ref: '#/components/parameters/idsArrParam'
+          required: true
+          description: Id's of orders to get info by those orders to get all products from shelves
+      responses:
+        '200':
+          $ref: '#/components/responses/AssemblyInfoRes'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+  /operations/place_products:
+    put:
+      tags:
+        - Operations
+      summary: Place products on shelves
+      operationId: OperationsPlaceProduct
+      security:
+        - access_token: [ ]
+        - Authorization: [ ]
+      requestBody:
+        $ref: '#/components/requestBodies/PlaceRemoveProducts'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductWithQty'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
+  /operations/remove_products:
+    delete:
+      tags:
+        - Operations
+      summary: Remove products from shelves
+      operationId: OperationsRemoveProducts
+      security:
+        - access_token: [ ]
+        - Authorization: [ ]
+      requestBody:
+        $ref: '#/components/requestBodies/PlaceRemoveProducts'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductWithQty'
+        '400':
+          $ref: '#/components/responses/GenericError'
+        '422':
+          $ref: '#/components/responses/GenericError'
 components:
   parameters:
     idsArrParam:
@@ -150,6 +521,100 @@ components:
       description: |
         Prefix the value with "Authorization" to indicate the custom authorization type
   responses:
+    ProductWithQty:
+      description: Product with quantity
+      content:
+        application/json:
+          schema:
+            properties:
+              data:
+                $ref: '#/components/schemas/ProductWithQty'
+    AssemblyInfoRes:
+      description: Get assembly info by shelves
+      content:
+        application/json:
+          schema:
+            properties:
+              data:
+                $ref: '#/components/schemas/AssemblyInfo'
+    ManyOrders:
+      description: Orders array
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderShort'
+    OneOrder:
+      description: One order full
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/Order'
+    ManyShelves:
+      description: Shelves array
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Shelf'
+    OneShelf:
+      description: One shelf
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/Shelf'
+    OneShelfWithInfo:
+      description: One shelf
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/ShelfInfo'
+    IdResponse:
+      description: Respond with id only
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/IdRes'
+    ManyAddresses:
+      description: Addresses array
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+    OneAddress:
+      description: One address
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/Address'
     ManyProducts:
       description: Products array
       content:
@@ -168,7 +633,10 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Product'
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/Product'
     User:
       description: User
       content:
@@ -176,9 +644,6 @@ components:
           schema:
             type: object
             properties:
-              success:
-                type: boolean
-                example: true
               data:
                 $ref: '#/components/schemas/User'
     LoginRes:
@@ -245,6 +710,13 @@ components:
           schema:
             type: string
   requestBodies:
+    PlaceRemoveProducts:
+      required: true
+      description: Input for place and remove products
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PlaceRemoveProductInput'
     CreateOrderInput:
       required: true
       description: Create order
@@ -288,6 +760,27 @@ components:
           schema:
             $ref: '#/components/schemas/SignInInput'
   schemas:
+    PlaceRemoveProductInput:
+      required:
+        - products_with_qty
+        - shelf_id
+      type: object
+      properties:
+        shelf_id:
+          type: integer
+          example: 2
+        products_with_qty:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductIdQty'
+    IdRes:
+      required:
+        - id
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
     Pagination:
       required:
         - total
@@ -450,6 +943,18 @@ components:
           type: string
           format: date-time
           example: 01.02.2024
+    ShelfInfo:
+      required:
+        - shelf
+        - products_with_qty
+      type: object
+      properties:
+        shelf:
+          $ref: '#/components/schemas/Shelf'
+        products_with_qty:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductWithQty'
     ShelfInput:
       required:
         - name
@@ -558,6 +1063,32 @@ components:
           type: string
           format: date-time
           example: 01.02.2024
+    OrderShort:
+      required:
+        - id
+        - address_id
+        - payment
+        - created_at
+        - updated_at
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        address_id:
+          type: integer
+          example: 1
+        payment:
+          type: string
+          example: Cash
+        created_at:
+          type: string
+          format: date-time
+          example: 01.02.2024
+        updated_at:
+          type: string
+          format: date-time
+          example: 01.02.2024
     OrderInput:
       required:
         - address_id
@@ -566,11 +1097,11 @@ components:
       type: object
       properties:
         address_id:
-          type: string
-          example: Speakers
+          type: integer
+          example: 1
         payment:
           type: string
-          example: Moscow
+          example: Card
         products:
           type: array
           items:

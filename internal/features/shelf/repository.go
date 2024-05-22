@@ -38,8 +38,7 @@ func (store *Store) Create(ctx *fasthttp.RequestCtx, m domain.ShelfInput) (
         VALUES (@name)
         RETURNING id, name, created_at, updated_at`
 	args := pgx.NamedArgs{
-		"name":        m.Name,
-		"destination": m.Destination,
+		"name": m.Name,
 	}
 
 	return shared.GetOneRow[domain.Shelf](ctx, store.db, sql, args)
@@ -80,10 +79,9 @@ func (store *Store) Update(ctx *fasthttp.RequestCtx, m domain.ShelfInput, id int
              WHERE id = @id 
              returning  id, name, created_at, updated_at`
 	args := pgx.NamedArgs{
-		"id":          id,
-		"name":        m.Name,
-		"destination": m.Destination,
-		"updated_at":  time.Now(),
+		"id":         id,
+		"name":       m.Name,
+		"updated_at": time.Now(),
 	}
 
 	return shared.GetOneRow[domain.Shelf](ctx, store.db, sql, args)

@@ -30,8 +30,8 @@ func Register(r *fiber.App, db *pgxpool.Pool, redis *redis.Client) {
 
 	addrR := v1.Group("/address")
 	addrR.Post("/", authHandler.DeserializeUser, addressHandler.Create)
-	addrR.Get("/", authHandler.DeserializeUser, addressHandler.Get)
-	addrR.Get("/:id", authHandler.DeserializeUser, addressHandler.GetOne)
+	addrR.Get("/", addressHandler.Get)
+	addrR.Get("/:id", addressHandler.GetOne)
 	addrR.Put("/:id", authHandler.DeserializeUser, addressHandler.Update)
 	addrR.Delete("/:id", authHandler.DeserializeUser, addressHandler.Delete)
 
@@ -40,8 +40,8 @@ func Register(r *fiber.App, db *pgxpool.Pool, redis *redis.Client) {
 
 	productR := v1.Group("/product")
 	productR.Post("/", authHandler.DeserializeUser, productHandler.Create)
-	productR.Get("/", authHandler.DeserializeUser, productHandler.GetMany)
-	productR.Get("/:id", authHandler.DeserializeUser, productHandler.GetOne)
+	productR.Get("/", productHandler.GetMany)
+	productR.Get("/:id", productHandler.GetOne)
 	productR.Put("/:id", authHandler.DeserializeUser, productHandler.Update)
 	productR.Delete("/:id", authHandler.DeserializeUser, productHandler.Delete)
 
@@ -50,8 +50,8 @@ func Register(r *fiber.App, db *pgxpool.Pool, redis *redis.Client) {
 
 	orderR := v1.Group("/order")
 	orderR.Post("/", authHandler.DeserializeUser, orderHandler.Create)
-	orderR.Get("/", authHandler.DeserializeUser, orderHandler.GetMany)
-	orderR.Get("/:id", authHandler.DeserializeUser, orderHandler.GetOne)
+	orderR.Get("/", orderHandler.GetMany)
+	orderR.Get("/:id", orderHandler.GetOne)
 	orderR.Put("/:id", authHandler.DeserializeUser, orderHandler.Update)
 	orderR.Delete("/:id", authHandler.DeserializeUser, orderHandler.Delete)
 
@@ -60,8 +60,8 @@ func Register(r *fiber.App, db *pgxpool.Pool, redis *redis.Client) {
 
 	shelfR := v1.Group("/shelf")
 	shelfR.Post("/", authHandler.DeserializeUser, shelfHandler.Create)
-	shelfR.Get("/", authHandler.DeserializeUser, shelfHandler.GetMany)
-	shelfR.Get("/:id", authHandler.DeserializeUser, shelfHandler.GetOne)
+	shelfR.Get("/", shelfHandler.GetMany)
+	shelfR.Get("/:id", shelfHandler.GetOne)
 	shelfR.Put("/:id", authHandler.DeserializeUser, shelfHandler.Update)
 	shelfR.Delete("/:id", authHandler.DeserializeUser, shelfHandler.Delete)
 
@@ -69,7 +69,7 @@ func Register(r *fiber.App, db *pgxpool.Pool, redis *redis.Client) {
 	operationsHandler := operations.New(operationsStore)
 
 	operationsR := v1.Group("/operations")
-	operationsR.Get("/assembly_info", authHandler.DeserializeUser, operationsHandler.GetAssemblyInfo)
+	operationsR.Get("/assembly_info", operationsHandler.GetAssemblyInfo)
 	operationsR.Put("/place_products", authHandler.DeserializeUser, operationsHandler.PlaceProductsOnShelf)
 	operationsR.Delete("/remove_products", authHandler.DeserializeUser, operationsHandler.RemoveProductsFromShelf)
 }
