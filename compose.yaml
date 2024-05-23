@@ -61,7 +61,7 @@ services:
       - GOOSE_DBSTRING=postgres://postgres:pass@db:5432/data?sslmode=disable
       - GOOSE_VERBOSE=true
     volumes:
-      - ./db/migrations:/migrations
+      - ./migrations:/migrations
 volumes:
   postgresDB:
   redisDB:

@@ -1,8 +1,8 @@
 package order
 
 import (
-	"github.com/JohnKucharsky/StoreAPI/internal/domain"
-	"github.com/JohnKucharsky/StoreAPI/internal/shared"
+	"github.com/JohnKucharsky/WarehouseAPI/internal/domain"
+	"github.com/JohnKucharsky/WarehouseAPI/internal/shared"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
 )
@@ -54,6 +54,9 @@ func (h *service) Create(c *fiber.Ctx) error {
 
 func (h *service) GetMany(c *fiber.Ctx) error {
 	user := c.Locals("user").(*domain.User)
+	if user == nil {
+		return c.Status(http.StatusInternalServerError).JSON(shared.ErrorRes("can't get user"))
+	}
 
 	many, err := h.repository.GetMany(c.Context(), user.ID)
 	if err != nil {

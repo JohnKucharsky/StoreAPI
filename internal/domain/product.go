@@ -23,8 +23,8 @@ type (
 	}
 
 	ProductWithQty struct {
-		Product  Product `json:"product"`
-		Quantity int     `json:"quantity" db:"product_qty"`
+		Product
+		Quantity int `json:"quantity" db:"product_qty"`
 	}
 
 	ProductIdQty struct {

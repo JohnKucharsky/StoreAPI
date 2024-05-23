@@ -900,16 +900,16 @@ components:
           type: string
           example: https://unsplash.com/photos/a-desk-with-a-monitor-keyboard-and-speakers-S0BhaaEQBZE
     ProductWithQty:
-      required:
-        - product
-        - quantity
-      type: object
-      properties:
-        product:
-          $ref: '#/components/schemas/Product'
-        quantity:
-          type: integer
-          example: 2
+      allOf:
+        - $ref: '#/components/schemas/Product'
+        - type: object
+          required:
+            - product
+            - quantity
+          properties:
+            quantity:
+              type: integer
+              example: 2
     ProductIdQty:
       required:
         - product_id
@@ -934,7 +934,7 @@ components:
           example: 1
         name:
           type: string
-          example: Phone
+          example: Big Yellow Shelf
         created_at:
           type: string
           format: date-time
@@ -962,7 +962,7 @@ components:
       properties:
         name:
           type: string
-          example: Speakers
+          example: Big Yellow Shelf
     Address:
       required:
         - id
@@ -981,19 +981,19 @@ components:
           example: 1
         city:
           type: string
-          example: Phone
+          example: Moscow
         street:
           type: string
-          example: Phone
+          example: Kantemirovskaya
         house:
           type: string
-          example: Phone
+          example: 1/4k5
         floor:
           type: string
-          example: Phone
+          example: 6
         entrance:
           type: string
-          example: Phone
+          example: 2
         additional_info:
           type: string
           example: Phone
@@ -1012,9 +1012,6 @@ components:
         - house
       type: object
       properties:
-        name:
-          type: string
-          example: Speakers
         city:
           type: string
           example: Moscow
@@ -1110,7 +1107,10 @@ components:
       required:
         - id
         - name
+        - last_name
+        - middle_name
         - email
+        - created_at
         - updated_at
       type: object
       properties:
@@ -1130,15 +1130,23 @@ components:
     SignUpInput:
       required:
         - name
+        - last_name
+        - middle_name
         - email
         - password
       properties:
         name:
           type: string
-          example: Me
+          example: John
+        last_name:
+          type: string
+          example: Doe
+        middle_name:
+          type: string
+          example: Shmiddle
         email:
           type: string
-          example: me@mail.com
+          example: test2@mail.com
         password:
           type: string
           minLength: 8
@@ -1150,7 +1158,7 @@ components:
       properties:
         email:
           type: string
-          example: me@mail.com
+          example: test@mail.com
         password:
           type: string
           minLength: 8

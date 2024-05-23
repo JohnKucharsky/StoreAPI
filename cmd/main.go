@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/JohnKucharsky/StoreAPI/internal"
-	"github.com/JohnKucharsky/StoreAPI/internal/db"
+	"github.com/JohnKucharsky/WarehouseAPI/internal"
+	"github.com/JohnKucharsky/WarehouseAPI/internal/db"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"

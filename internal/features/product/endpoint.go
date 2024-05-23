@@ -1,8 +1,8 @@
 package product
 
 import (
-	"github.com/JohnKucharsky/StoreAPI/internal/domain"
-	"github.com/JohnKucharsky/StoreAPI/internal/shared"
+	"github.com/JohnKucharsky/WarehouseAPI/internal/domain"
+	"github.com/JohnKucharsky/WarehouseAPI/internal/shared"
 	"github.com/gofiber/fiber/v2"
 	"github.com/samber/lo"
 	"net/http"

@@ -3,8 +3,8 @@ package operations
 import (
 	"errors"
 	"fmt"
-	"github.com/JohnKucharsky/StoreAPI/internal/domain"
-	"github.com/JohnKucharsky/StoreAPI/internal/shared"
+	"github.com/JohnKucharsky/WarehouseAPI/internal/domain"
+	"github.com/JohnKucharsky/WarehouseAPI/internal/shared"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/valyala/fasthttp"

@@ -1,12 +1,12 @@
 package internal
 
 import (
-	"github.com/JohnKucharsky/StoreAPI/internal/features/address"
-	"github.com/JohnKucharsky/StoreAPI/internal/features/auth"
-	"github.com/JohnKucharsky/StoreAPI/internal/features/operations"
-	"github.com/JohnKucharsky/StoreAPI/internal/features/order"
-	"github.com/JohnKucharsky/StoreAPI/internal/features/product"
-	"github.com/JohnKucharsky/StoreAPI/internal/features/shelf"
+	"github.com/JohnKucharsky/WarehouseAPI/internal/features/address"
+	"github.com/JohnKucharsky/WarehouseAPI/internal/features/auth"
+	"github.com/JohnKucharsky/WarehouseAPI/internal/features/operations"
+	"github.com/JohnKucharsky/WarehouseAPI/internal/features/order"
+	"github.com/JohnKucharsky/WarehouseAPI/internal/features/product"
+	"github.com/JohnKucharsky/WarehouseAPI/internal/features/shelf"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -50,8 +50,8 @@ func Register(r *fiber.App, db *pgxpool.Pool, redis *redis.Client) {
 
 	orderR := v1.Group("/order")
 	orderR.Post("/", authHandler.DeserializeUser, orderHandler.Create)
-	orderR.Get("/", orderHandler.GetMany)
-	orderR.Get("/:id", orderHandler.GetOne)
+	orderR.Get("/", authHandler.DeserializeUser, orderHandler.GetMany)
+	orderR.Get("/:id", authHandler.DeserializeUser, orderHandler.GetOne)
 	orderR.Put("/:id", authHandler.DeserializeUser, orderHandler.Update)
 	orderR.Delete("/:id", authHandler.DeserializeUser, orderHandler.Delete)
 

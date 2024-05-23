@@ -1,8 +1,9 @@
 package shelf
 
 import (
-	"github.com/JohnKucharsky/StoreAPI/internal/domain"
-	"github.com/JohnKucharsky/StoreAPI/internal/shared"
+	"fmt"
+	"github.com/JohnKucharsky/WarehouseAPI/internal/domain"
+	"github.com/JohnKucharsky/WarehouseAPI/internal/shared"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/valyala/fasthttp"
@@ -57,14 +58,15 @@ func (store *Store) GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.ShelfInfo,
 	if err != nil {
 		return nil, err
 	}
-
-	sqlProduct := `select product.*, shelf_product.product_qty from shelf_product left join product on
-    product.id=shelf_product.product_id where shelf_product.shelf_id = @id`
+	sqlProduct := `select shelf_product.product_qty, product.*  
+					from shelf_product left join product on
+    				product.id=shelf_product.product_id where shelf_product.shelf_id = @id`
 	argsProduct := pgx.NamedArgs{"id": shelf.ID}
 	productWithQty, err := shared.GetManyRowsToStructByName[domain.ProductWithQty](ctx, store.db, sqlProduct, argsProduct)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("here")
 
 	return &domain.ShelfInfo{
 		Shelf:   *shelf,

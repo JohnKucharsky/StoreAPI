@@ -6,7 +6,5 @@ prod:
 	docker compose up --build
 migrate:
 	cd ./migrations; goose postgres postgres://postgres:pass@localhost:5432/data up
-migrate-down:
-	cd ./migrations; goose postgres postgres://postgres:pass@localhost:5432/data down
 build-openapi:
 	cd ./api; redocly build-docs ./openapi.yaml --output=index.html

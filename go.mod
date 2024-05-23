@@ -1,4 +1,4 @@
-module github.com/JohnKucharsky/StoreAPI
+module github.com/JohnKucharsky/WarehouseAPI
 
 go 1.22.1
 
