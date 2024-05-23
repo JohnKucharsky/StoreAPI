@@ -281,6 +281,11 @@ paths:
         - Product
       summary: Get all products
       operationId: GetManyProducts
+      parameters:
+        - $ref: '#/components/parameters/offsetParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/orderByParam'
+        - $ref: '#/components/parameters/sortOrderParam'
       responses:
         '200':
           $ref: '#/components/responses/ManyProducts'
@@ -421,12 +426,7 @@ paths:
       summary: Get assembly info
       operationId: OperationsAssemblyInfo
       parameters:
-        - in: query
-          name: idsArray
-          schema:
-            $ref: '#/components/parameters/idsArrParam'
-          required: true
-          description: Id's of orders to get info by those orders to get all products from shelves
+        - $ref: '#/components/parameters/idParam'
       responses:
         '200':
           $ref: '#/components/responses/AssemblyInfoRes'
@@ -472,16 +472,15 @@ paths:
           $ref: '#/components/responses/GenericError'
 components:
   parameters:
-    idsArrParam:
+    idParam:
       in: query
       name: id
-      required: true
+      required: false
       schema:
         type: integer
         minimum: 1
-        default: 0
-        example: 10
-      description: Array of ids
+        example: 1
+      description: Orders ids
     offsetParam:
       in: query
       name: offset
@@ -490,7 +489,7 @@ components:
         type: integer
         minimum: 1
         default: 0
-        example: 10
+        example: 1
       description: The number of items to skip before starting to collect the result set
     limitParam:
       in: query
@@ -498,9 +497,27 @@ components:
       required: false
       schema:
         type: integer
+        minimum: 5
+        example: 5
+      description: The numbers of items to return.
+    orderByParam:
+      in: query
+      name: order_by
+      required: false
+      schema:
+        type: string
         minimum: 1
         default: 20
-      description: The numbers of items to return.
+        example: name
+      description: Order by name, serial, updated_at
+    sortOrderParam:
+      in: query
+      name: sort_order
+      required: false
+      schema:
+        type: string
+        example: asc
+      description: asc or desc
   securitySchemes:
     access_token:
       description: |
