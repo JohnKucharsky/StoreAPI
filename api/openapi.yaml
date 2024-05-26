@@ -8,6 +8,10 @@ servers:
 tags:
   - name: Authorization
   - name: Address
+  - name: Shelf
+  - name: Product
+  - name: Order
+  - name: Operations
 paths:
   /auth/sign-up:
     post:
@@ -19,7 +23,7 @@ paths:
         $ref: '#/components/requestBodies/SignUpInput'
       responses:
         '200':
-          $ref: '#/components/responses/User'
+          $ref: '#/components/responses/SignUpRes'
         '400':
           $ref: '#/components/responses/GenericError'
         '422':
@@ -91,7 +95,7 @@ paths:
       operationId: GetMe
       responses:
         '200':
-          $ref: '#/components/responses/User'
+          $ref: '#/components/responses/SignUpRes'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -654,7 +658,7 @@ components:
             properties:
               data:
                 $ref: '#/components/schemas/Product'
-    User:
+    SignUpRes:
       description: User
       content:
         application/json:
@@ -677,7 +681,7 @@ components:
             properties:
               access_token:
                 type: string
-              user:
+              data:
                 $ref: '#/components/schemas/User'
     AccessToken:
       description: Access token
@@ -714,9 +718,6 @@ components:
           schema:
             type: object
             properties:
-              success:
-                type: boolean
-                example: false
               message:
                 type: string
                 example: something went wrong
@@ -842,6 +843,9 @@ components:
           type: string
           nullable: true
           example: iPhone
+        picture_url:
+          type: string
+          example: 34ko34j
         created_at:
           type: string
           format: date-time
@@ -1006,13 +1010,16 @@ components:
           type: string
           example: 1/4k5
         floor:
-          type: string
+          type: integer
+          nullable: true
           example: 6
         entrance:
-          type: string
+          type: integer
+          nullable: true
           example: 2
         additional_info:
           type: string
+          nullable: true
           example: Phone
         created_at:
           type: string
@@ -1040,12 +1047,15 @@ components:
           example: 20
         floor:
           type: integer
+          nullable: true
           example: 7
         entrance:
           type: integer
+          nullable: true
           example: 2
         additional_info:
           type: string
+          nullable: true
           example: Call when you arrive
     Order:
       required:
@@ -1137,9 +1147,19 @@ components:
         name:
           type: string
           example: John
+        last_name:
+          type: string
+          example: Doe
+        middle_name:
+          type: string
+          example: Shmiddle
         email:
           type: string
           example: john@mail.com
+        created_at:
+          type: string
+          format: date-time
+          example: 02.03.2020
         updated_at:
           type: string
           format: date-time
@@ -1148,7 +1168,6 @@ components:
       required:
         - name
         - last_name
-        - middle_name
         - email
         - password
       properties:
