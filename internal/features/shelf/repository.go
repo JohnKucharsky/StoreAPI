@@ -1,7 +1,6 @@
 package shelf
 
 import (
-	"fmt"
 	"github.com/JohnKucharsky/WarehouseAPI/internal/domain"
 	"github.com/JohnKucharsky/WarehouseAPI/internal/shared"
 	"github.com/jackc/pgx/v5"
@@ -66,7 +65,6 @@ func (store *Store) GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.ShelfInfo,
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("here")
 
 	return &domain.ShelfInfo{
 		Shelf:   *shelf,

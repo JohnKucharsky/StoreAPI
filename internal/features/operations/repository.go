@@ -2,7 +2,6 @@ package operations
 
 import (
 	"errors"
-	"fmt"
 	"github.com/JohnKucharsky/WarehouseAPI/internal/domain"
 	"github.com/JohnKucharsky/WarehouseAPI/internal/shared"
 	"github.com/jackc/pgx/v5"
@@ -68,7 +67,7 @@ func (store *Store) PlaceProductsOnShelf(ctx *fasthttp.RequestCtx, input domain.
 			"product_qty": productToAddInput.Quantity + productToAddDb.ProductQty,
 			"shelf_id":    input.ShelfID,
 			"product_id":  item}
-		fmt.Println("exec")
+
 		_, err := store.db.Exec(ctx, sql, args)
 		if err != nil {
 			return nil, err

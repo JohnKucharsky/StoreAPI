@@ -40,7 +40,9 @@ func (h *service) Create(c *fiber.Ctx) error {
 }
 
 func (h *service) Get(c *fiber.Ctx) error {
-	address, err := h.repository.GetMany(c.Context())
+	var query = c.Query("query")
+
+	address, err := h.repository.GetMany(c.Context(), query)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(shared.ErrorRes(err.Error()))
 	}

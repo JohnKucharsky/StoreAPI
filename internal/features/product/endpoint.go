@@ -55,7 +55,9 @@ func (h *service) GetMany(c *fiber.Ctx) error {
 		return c.Status(http.StatusUnprocessableEntity).JSON(shared.ErrorRes("wrong term for sort_order"))
 	}
 
-	many, total, err := h.repository.GetMany(c.Context(), pp, shared.GetOrderString(orderBy, sortOrder))
+	var query = c.Query("query")
+
+	many, total, err := h.repository.GetMany(c.Context(), pp, shared.GetOrderString(orderBy, sortOrder), query)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
 	}

@@ -65,7 +65,7 @@ func (h *service) SignIn(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(shared.ErrorRes(err.Error()))
 	}
 	if !ok {
-		return c.Status(http.StatusUnauthorized).JSON(shared.ErrorRes("passwords don't match"))
+		return c.Status(http.StatusUnauthorized).JSON(shared.ErrorRes("password is incorrect"))
 	}
 
 	accessToken, err := h.repository.SetAccessToken(c.Context(), signedRes.ID)

@@ -1,18 +1,20 @@
 package address
 
 import (
+	"fmt"
 	"github.com/JohnKucharsky/WarehouseAPI/internal/domain"
 	"github.com/JohnKucharsky/WarehouseAPI/internal/shared"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/valyala/fasthttp"
+	"strings"
 	"time"
 )
 
 type (
 	StoreI interface {
 		Create(ctx *fasthttp.RequestCtx, m domain.AddressInput) (*domain.Address, error)
-		GetMany(ctx *fasthttp.RequestCtx) ([]*domain.Address, error)
+		GetMany(ctx *fasthttp.RequestCtx, query string) ([]*domain.Address, error)
 		GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.Address, error)
 		Update(ctx *fasthttp.RequestCtx, m domain.AddressInput, id int) (*domain.Address, error)
 		Delete(ctx *fasthttp.RequestCtx, id int) (*int, error)
@@ -49,10 +51,15 @@ func (store *Store) Create(ctx *fasthttp.RequestCtx, m domain.AddressInput) (
 
 }
 
-func (store *Store) GetMany(ctx *fasthttp.RequestCtx) ([]*domain.Address, error) {
-	sql := `select * from address`
+func (store *Store) GetMany(ctx *fasthttp.RequestCtx, query string) ([]*domain.Address, error) {
+	var sql = `select * from address`
+	var args = pgx.NamedArgs{"query": fmt.Sprintf("%%%v%%", strings.ToLower(query))}
+	if query != "" {
+		sql = `select * from address where city ilike @query or street ilike @query or house ilike @query;`
 
-	return shared.GetManyRows[domain.Address](ctx, store.db, sql, pgx.NamedArgs{})
+	}
+
+	return shared.GetManyRows[domain.Address](ctx, store.db, sql, args)
 }
 
 func (store *Store) GetOne(ctx *fasthttp.RequestCtx, id int) (*domain.Address, error) {
